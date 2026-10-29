@@ -3,7 +3,7 @@
   "title": "我的华为云最佳实践 Demo",
   "subtitle": "一句话说明这个 Demo 演示什么",
   "region": "cn-north-4",
-  "backend": "mock",
+  "backend": "ssh",
   "cards": [
     { "label": "服务 A", "value": "运行中", "tone": "green" },
     { "label": "服务 B", "value": "正常", "tone": "green" },
@@ -27,6 +27,7 @@
       "label": "触发任务",
       "desc": "跑一遍完整数据流",
       "flow": ["n1", "n2", "n3", "n4"],
+      "cmd": "echo hello-from-real-ecs && hostname",
       "event": { "name": "任务完成", "detail": "数据已写入存储并展示", "severity": "Success" }
     }
   ]

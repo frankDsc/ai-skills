@@ -38,7 +38,7 @@ def validate(m):
                 raise ValueError(f"action {a['id']} 的 flow 引用了不存在的节点: {fid}")
     m.setdefault("cards", [])
     m.setdefault("edges", [])
-    m.setdefault("backend", "mock")
+    m.setdefault("backend", "ssh")
     m.setdefault("region", "cn-north-4")
     return m
 

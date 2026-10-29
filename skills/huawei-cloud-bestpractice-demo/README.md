@@ -15,23 +15,27 @@
 
 1. 用**华为云官方图标**生成架构图；
 2. 起一个**动态 GUI**（卡片 + 架构图 + 动作按钮 + 事件流 + 架构图红点流动动画）；
-3. 可选：通过 SDK 真实创建底层资源（VPC / ECS / EIP / OBS / RDS…）。
+3. **必需**：通过 SDK 真实创建底层资源（VPC / ECS / EIP …），后端 SSH 到真实虚拟机执行动作。
 
-### 60 秒跑起来（无需真实云资源）
+> **没有 mock**：每个 Demo 都连真实资源。
+
+### 快速开始（真实 ECS + 真实命令）
 
 ```bash
-pip install flask
+pip install huaweicloudsdkcore huaweicloudsdkecs huaweicloudsdkvpc huaweicloudsdkeip paramiko flask
+cp config.example.json config.json               # 填 AK/SK/project_id/vpc_id/subnet_id
+python examples/bigdata-demo/scripts/setup.py    # 建真实 ECS + EIP
 python gui/app.py --manifest examples/bigdata-demo/manifest.json --port 8899
 # 打开 http://127.0.0.1:8899
 ```
 
-点左侧「触发 ETL 作业」→ 架构图上红点沿数据流跑动 → 右侧出现「ETL 作业完成」事件。
+点「跑 ETL 聚合」→ 架构图红点跑动 → 右侧显示**真实 ECS 上的命令输出**。
 
 ### 两个内置示例
 
 | 示例 | 领域 | 后端 | 说明 |
 |---|---|---|---|
-| [`examples/bigdata-demo`](examples/bigdata-demo/) | 大数据 | `mock` | DIS/OBS/DataArts/DWS/DLV 数据流，零资源可跑 |
+| [`examples/bigdata-demo`](examples/bigdata-demo/) | 大数据 | `ssh` | 真实 ECS 上跑数据流水线命令 |
 | [`examples/hwcloud-hss-demo`](examples/hwcloud-hss-demo/) | 安全 | `hss` | 真实 ECS + HSS 检测，含建资源脚本 |
 
 ### 核心：manifest
@@ -40,12 +44,13 @@ python gui/app.py --manifest examples/bigdata-demo/manifest.json --port 8899
 {
   "id": "bigdata-demo",
   "title": "华为云大数据最佳实践 Demo",
-  "backend": "mock",
-  "cards": [{"label": "DWS", "value": "运行中", "tone": "green"}],
+  "backend": "ssh",
+  "cards": [{"label": "ECS", "value": "运行中", "tone": "green"}],
   "nodes": [{"id": "src", "label": "数据源", "icon": "rds", "col": 0, "row": 1}],
   "edges": [{"from": "src", "to": "dws", "flow": "data"}],
   "actions": [{"id": "run_etl", "label": "触发 ETL", "flow": ["src", "dws"],
-               "event": {"name": "ETL 完成", "detail": "1 万行", "severity": "Success"}}]
+               "cmd": "awk -F, 'NR>1{s+=$2} END{print s}' /data/lake/orders.csv",
+               "event": {"name": "ETL 完成", "detail": "聚合结果", "severity": "Success"}}]
 }
 ```
 
@@ -68,7 +73,7 @@ python gui/app.py --manifest examples/bigdata-demo/manifest.json --port 8899
 
 ```
 lib/        manifest 校验 + 通用架构图生成器
-gui/        通用 GUI + 可插拔后端（mock / hss）
+gui/        通用 GUI + 后端（ssh / hss）
 assets/     24 个华为云官方图标
 examples/   大数据 + HSS 两个示例
 references/ 服务目录 / 最佳实践索引 / 踩坑 / 费用 / 图标来源

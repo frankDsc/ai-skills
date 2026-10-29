@@ -6,7 +6,7 @@
 
 | Skill | 说明 | 状态 |
 |---|---|---|
-| [**huawei-cloud-bestpractice-demo**](skills/huawei-cloud-bestpractice-demo/) | **华为云最佳实践 Demo 生成器**（通用）：任意领域（安全/大数据/数据库/AI/容器/网络/存储）→ manifest → 官方图标架构图 + 动态 GUI（动作触发 + 架构图动画 + 事件流）+ 可选真实资源 | ✅ 可用 |
+| [**huawei-cloud-bestpractice-demo**](skills/huawei-cloud-bestpractice-demo/) | **华为云最佳实践 Demo 生成器**（通用）：任意领域（安全/大数据/数据库/AI/容器/网络/存储）→ manifest → 官方图标架构图 + 动态 GUI（动作触发 + 架构图动画 + 事件流）+ **真实 ECS 资源**（后端 SSH 执行真实命令） | ✅ 可用 |
 
 ## 通用 Skill 能做什么
 
@@ -16,7 +16,7 @@
 2. 写一个 `manifest.json`（节点 / 连线 / 动作 / 事件）；
 3. 用官方图标生成架构图；
 4. 起动态 GUI（与 HSS Demo 同款效果）；
-5. 需要时用 SDK 真实创建 VPC/ECS/EIP/OBS/RDS 等资源。
+5. 用 SDK 真实创建 VPC/ECS/EIP 等资源（**必需，所有 Demo 都连真实虚拟机**）。
 
 **新增一个领域 = 新增一个 manifest，无需改代码。**
 
@@ -24,14 +24,16 @@
 
 | 示例 | 领域 | 后端 |
 |---|---|---|
-| `skills/huawei-cloud-bestpractice-demo/examples/bigdata-demo` | 大数据（DIS/OBS/DataArts/DWS/DLV） | mock（零资源可跑） |
+| `skills/huawei-cloud-bestpractice-demo/examples/bigdata-demo` | 大数据（真实 ECS 数据流水线） | ssh（真实） |
 | `skills/huawei-cloud-bestpractice-demo/examples/hwcloud-hss-demo` | 安全（ECS + HSS 检测） | hss（真实） |
 
 ## 快速体验
 
 ```bash
 cd skills/huawei-cloud-bestpractice-demo
-pip install flask
+pip install huaweicloudsdkcore huaweicloudsdkecs huaweicloudsdkvpc huaweicloudsdkeip paramiko flask
+cp config.example.json config.json               # 填 AK/SK/project_id/vpc_id/subnet_id
+python examples/bigdata-demo/scripts/setup.py    # 建真实 ECS + EIP
 python gui/app.py --manifest examples/bigdata-demo/manifest.json --port 8899
 # 打开 http://127.0.0.1:8899
 ```

@@ -14,7 +14,7 @@
 
 **Demo 流程**：攻击者 → 公网边界 → ECS（HSS Agent）→ HSS 检出 → 告警
 **图标**：`ecs` `hss` `iam` `cts`；边界用空图标通用框
-**后端**：`hss`（真实）/ `mock`
+**后端**：`hss`（真实 HSS 检测）
 
 ## 二、大数据（数据湖 / 数仓 / BI）
 
@@ -28,7 +28,7 @@
 
 **Demo 流程**：数据源 → DIS/OBS → DataArts → DWS → DLV；点「触发 ETL」看数据流动
 **图标**：`rds` `dis` `obs` `dataarts` `dws` `dlv` `bi` `mrs` `dli`
-**后端**：`mock`（演示）/ 真实可接 DataArts 作业
+**后端**：`ssh`（真实 ECS 执行命令）
 
 ## 三、数据库
 
@@ -120,4 +120,4 @@
 ---
 
 > 每个领域都能用同一套 manifest + GUI 复现；差异只在「节点/连线/动作/事件」。
-> 纯演示用 `backend: "mock"`，零资源即可跑；需要真实数据再替换 backend。
+> 所有 Demo 都用 `backend: "ssh"` 连真实 ECS 执行命令；`hss` 额外接 HSS 真实检测。

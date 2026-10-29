@@ -48,3 +48,18 @@ def eip_client(cfg):
 def hss_client(cfg):
     from huaweicloudsdkhss.v5 import HssClient
     return _client(HssClient, cfg, "hss")
+
+
+def ssh_exec(ip, password, cmd, timeout=60):
+    """SSH 到真实 VM 执行命令，返回 stdout（或 stderr）。"""
+    import paramiko
+    c = paramiko.SSHClient()
+    c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    c.connect(ip, username="root", password=password, timeout=15,
+              allow_agent=False, look_for_keys=False)
+    try:
+        _, o, e = c.exec_command(cmd, timeout=timeout)
+        return (o.read().decode("utf-8", "replace").strip()
+                or e.read().decode("utf-8", "replace").strip())
+    finally:
+        c.close()

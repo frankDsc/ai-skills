@@ -6,6 +6,8 @@ description: 把任意华为云「最佳实践」做成可对客户演示的 Dem
 # 华为云最佳实践 Demo 生成器
 
 > 一句话：**用户说「做 XX 最佳实践」，本 skill 让它变成「能跑、能看、能演示」的完整 Demo。**
+>
+> **所有 Demo 都使用真实资源**：至少 1 台真实 ECS，后端通过 SSH 在虚拟机上真实执行动作命令，产出真实输出/告警。没有 mock。
 
 ## 能力边界
 
@@ -15,7 +17,7 @@ description: 把任意华为云「最佳实践」做成可对客户演示的 Dem
 | 底层资源 | VPC、安全组、ECS、EIP、OBS、RDS 等（按需，可释放） |
 | 架构图 | 从 manifest 生成，使用**华为云官方图标**（`assets/icons/`，24 个） |
 | 动态 GUI | 卡片 + 架构图 + 可触发动作 + 架构图动画 + 事件流 |
-| 后端可插拔 | `mock`（任意领域，零资源即可演示）/ `hss`（真实安全检测） |
+| 后端 | `ssh`（SSH 到**真实 ECS** 执行命令，默认）/ `hss`（SSH + 真实 HSS 检测） |
 
 ## 核心：manifest（声明式 Demo 描述）
 
@@ -27,7 +29,7 @@ description: 把任意华为云「最佳实践」做成可对客户演示的 Dem
   "title": "华为云大数据最佳实践 Demo",
   "subtitle": "数据接入 → 数据湖 → 数仓 → 可视化",
   "region": "cn-north-4",
-  "backend": "mock",
+  "backend": "ssh",
   "cards": [{"label": "DWS", "value": "运行中", "tone": "green"}],
   "nodes": [
     {"id": "src", "label": "数据源", "sub": "RDS/文件", "icon": "rds", "col": 0, "row": 1},
@@ -35,9 +37,10 @@ description: 把任意华为云「最佳实践」做成可对客户演示的 Dem
   ],
   "edges": [{"from": "src", "to": "dws", "flow": "data"}],
   "actions": [
-    {"id": "run_etl", "label": "触发 ETL", "desc": "跑一遍数据流",
+    {"id": "run_etl", "label": "触发 ETL", "desc": "在真实 ECS 上跑数据流",
      "flow": ["src", "dws"],
-     "event": {"name": "ETL 完成", "detail": "加载 1 万行", "severity": "Success"}}
+     "cmd": "awk -F, 'NR>1{s+=$2} END{print s}' /data/lake/orders.csv",
+     "event": {"name": "ETL 完成", "detail": "聚合结果", "severity": "Success"}}
   ]
 }
 ```
@@ -48,11 +51,11 @@ description: 把任意华为云「最佳实践」做成可对客户演示的 Dem
 |---|---|---|
 | `id` / `title` | ✅ | Demo 标识 / 标题 |
 | `subtitle` / `region` | | 副标题 / 区域 |
-| `backend` | | `mock`（默认）或 `hss` |
+| `backend` | | `ssh`（默认，连真实 ECS）或 `hss` |
 | `cards` | | 顶部 4 张状态卡：`label` / `value` / `tone`(green/red) |
 | `nodes` | ✅ | `id` / `label` / `sub` / `icon`(见 `assets/icons/` 文件名) / `col` / `row` |
 | `edges` | | `from` / `to` / `flow`(`data` 实线红 / `control` 虚线灰) |
-| `actions` | ✅ | `id` / `label` / `desc` / `flow`(节点 id 序列) / `event`(mock 用) |
+| `actions` | ✅ | `id` / `label` / `desc` / `flow`(节点 id 序列) / `cmd`(**在真实 ECS 上执行的命令**) / `event` |
 
 > 布局用 `(col,row)` 网格，节点自动排布；连线自动正交路由。
 
@@ -62,7 +65,7 @@ description: 把任意华为云「最佳实践」做成可对客户演示的 Dem
 
 ```bash
 pip install huaweicloudsdkcore huaweicloudsdkecs huaweicloudsdkvpc huaweicloudsdkeip huaweicloudsdkhss paramiko flask
-cp config.example.json config.json   # 需要真实资源时才填 AK/SK
+cp config.example.json config.json   # 必填 AK/SK（所有 Demo 都建真实资源）
 ```
 
 ### 1. 选型（查索引）
@@ -72,14 +75,15 @@ cp config.example.json config.json   # 需要真实资源时才填 AK/SK
 ### 2. 写 manifest
 
 复制 `templates/manifest.example.json`，改成目标领域的节点/连线/动作。
-- 纯演示（不建真实资源）：`backend: "mock"`，动作填 `event` 即可。
-- 需要真实资源：继续第 3 步，并把 `backend` 指向对应实现（如 `hss`）。
+- 每个 `action` 必须有 `cmd`（在真实 ECS 上执行的命令）；
+- `backend` 用 `ssh`（默认）或 `hss`；**没有 mock，所有 Demo 都连真实资源**。
 
-### 3. 建底层资源（可选）
+### 3. 建底层资源（必需）
 
-按 manifest 的资源需求创建：VPC/安全组 → ECS/EIP → 对应 PaaS 服务。
-参考 `examples/hwcloud-hss-demo/scripts/01_setup_env.py`（安全组+ECS+EIP 的完整写法）。
-产出写入 `state.json`（server_id / public_ip 等），供后端与 GUI 使用。
+每套 Demo 至少创建 1 台真实 ECS（执行节点）+ EIP：
+- 直接调用 `lib/provision.py` 的 `setup_vm()`（安全组 + 按需 ECS + EIP 一步到位）；
+- 产出写入 `state.json`（server_id / public_ip 等）与 `demo_password.txt`；
+- 参考 `examples/bigdata-demo/scripts/setup.py` 或 `examples/hwcloud-hss-demo/scripts/01_setup_env.py`。
 
 ### 4. 生成架构图
 
@@ -114,15 +118,16 @@ python gui/app.py --manifest examples/bigdata-demo/manifest.json --port 8899
 .
 ├── SKILL.md / README.md / config.example.json
 ├── lib/
-│   ├── common.py        # 配置 + SDK 客户端
+│   ├── common.py        # 配置 + SDK 客户端 + SSH
 │   ├── manifest.py      # manifest 加载/校验
-│   └── arch.py          # manifest → 官方图标架构图 SVG
+│   ├── arch.py          # manifest → 官方图标架构图 SVG
+│   └── provision.py     # 真实资源：安全组 + ECS + EIP
 ├── gui/
 │   ├── app.py           # 通用动态 GUI（读 manifest）
-│   └── backends/        # mock / hss 可插拔后端
+│   └── backends/        # ssh（真实 ECS）/ hss（真实 HSS）
 ├── examples/
-│   ├── bigdata-demo/    # 大数据示例（mock）
-│   └── hwcloud-hss-demo/# 安全示例（hss 真实后端 + 资源脚本）
+│   ├── bigdata-demo/    # 大数据示例（真实 ECS + 真实命令）
+│   └── hwcloud-hss-demo/# 安全示例（真实 ECS + HSS）
 ├── assets/icons/        # 24 个华为云官方图标
 ├── templates/manifest.example.json
 └── references/          # 服务目录 / 最佳实践索引 / 踩坑 / 费用 / 图标来源
@@ -130,7 +135,7 @@ python gui/app.py --manifest examples/bigdata-demo/manifest.json --port 8899
 
 ## 后端扩展
 
-新增一个「真实后端」只需实现三个方法：
+默认 `ssh` 后端已连真实 ECS；如需接入其它真实资源（如 DWS/RDS 的 API），实现三个方法：
 
 ```python
 class MyBackend:
