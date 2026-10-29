@@ -1,0 +1,33 @@
+{
+  "id": "my-bestpractice-demo",
+  "title": "我的华为云最佳实践 Demo",
+  "subtitle": "一句话说明这个 Demo 演示什么",
+  "region": "cn-north-4",
+  "backend": "mock",
+  "cards": [
+    { "label": "服务 A", "value": "运行中", "tone": "green" },
+    { "label": "服务 B", "value": "正常", "tone": "green" },
+    { "label": "服务 C", "value": "已就绪", "tone": "green" },
+    { "label": "今日任务", "value": "0", "tone": "red" }
+  ],
+  "nodes": [
+    { "id": "n1", "label": "数据源", "sub": "接入", "icon": "rds", "col": 0, "row": 1 },
+    { "id": "n2", "label": "处理服务", "sub": "计算", "icon": "functiongraph", "col": 1, "row": 1 },
+    { "id": "n3", "label": "存储", "sub": "持久化", "icon": "obs", "col": 2, "row": 1 },
+    { "id": "n4", "label": "展示", "sub": "可视化", "icon": "dlv", "col": 3, "row": 1 }
+  ],
+  "edges": [
+    { "from": "n1", "to": "n2", "flow": "data" },
+    { "from": "n2", "to": "n3", "flow": "data" },
+    { "from": "n3", "to": "n4", "flow": "data" }
+  ],
+  "actions": [
+    {
+      "id": "run_job",
+      "label": "触发任务",
+      "desc": "跑一遍完整数据流",
+      "flow": ["n1", "n2", "n3", "n4"],
+      "event": { "name": "任务完成", "detail": "数据已写入存储并展示", "severity": "Success" }
+    }
+  ]
+}

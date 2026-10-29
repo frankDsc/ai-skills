@@ -1,0 +1,45 @@
+{
+  "id": "bigdata-demo",
+  "title": "华为云大数据最佳实践 Demo",
+  "subtitle": "数据接入 → 数据湖 → 数据仓库 → 可视化（DIS + OBS + DataArts + DWS + DLV）",
+  "region": "cn-north-4",
+  "backend": "mock",
+  "cards": [
+    { "label": "DWS 数据仓库", "value": "运行中", "tone": "green" },
+    { "label": "DataArts 调度", "value": "正常", "tone": "green" },
+    { "label": "OBS 数据湖", "value": "已就绪", "tone": "green" },
+    { "label": "今日作业", "value": "0", "tone": "red" }
+  ],
+  "nodes": [
+    { "id": "src", "label": "数据源", "sub": "RDS / 文件", "icon": "rds", "col": 0, "row": 1 },
+    { "id": "dis", "label": "DIS", "sub": "数据接入", "icon": "dis", "col": 1, "row": 0 },
+    { "id": "obs", "label": "OBS", "sub": "数据湖", "icon": "obs", "col": 1, "row": 2 },
+    { "id": "dataarts", "label": "DataArts", "sub": "数据集成 / 调度", "icon": "dataarts", "col": 2, "row": 1 },
+    { "id": "dws", "label": "DWS", "sub": "数据仓库", "icon": "dws", "col": 3, "row": 1 },
+    { "id": "dlv", "label": "DLV", "sub": "数据可视化", "icon": "dlv", "col": 4, "row": 1 }
+  ],
+  "edges": [
+    { "from": "src", "to": "dis", "flow": "data" },
+    { "from": "src", "to": "obs", "flow": "data" },
+    { "from": "dis", "to": "dataarts", "flow": "data" },
+    { "from": "obs", "to": "dataarts", "flow": "data" },
+    { "from": "dataarts", "to": "dws", "flow": "data" },
+    { "from": "dws", "to": "dlv", "flow": "data" }
+  ],
+  "actions": [
+    {
+      "id": "run_etl",
+      "label": "触发 ETL 作业",
+      "desc": "数据接入 → 数据湖 → 数据仓库",
+      "flow": ["src", "dis", "dataarts", "dws"],
+      "event": { "name": "ETL 作业完成", "detail": "从 DIS/OBS 加载 10,000 行到 DWS", "severity": "Success" }
+    },
+    {
+      "id": "run_bi",
+      "label": "刷新 BI 报表",
+      "desc": "DWS → DLV 可视化",
+      "flow": ["dws", "dlv"],
+      "event": { "name": "报表已刷新", "detail": "DLV 大屏数据已更新", "severity": "Success" }
+    }
+  ]
+}
