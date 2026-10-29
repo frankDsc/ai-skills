@@ -1,0 +1,16 @@
+# 凭证与敏感信息（切勿提交）
+config.json
+demo_password.txt
+state.json
+*.pem
+*.key
+credentials.json
+
+# 运行时产物
+__pycache__/
+*.pyc
+*.log
+
+# 系统
+.DS_Store
+.venv/

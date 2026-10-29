@@ -1,0 +1,16 @@
+{
+  "ak": "YOUR_ACCESS_KEY_ID",
+  "sk": "YOUR_SECRET_ACCESS_KEY",
+  "region": "cn-north-4",
+  "project_id": "YOUR_PROJECT_ID",
+  "vpc_id": "YOUR_VPC_ID",
+  "subnet_id": "YOUR_SUBNET_ID",
+  "availability_zone": "cn-north-4a",
+  "flavor": "s6.medium.2",
+  "image_id": "9c2f377e-7f49-4fdf-b0be-c6c8d3b96fde",
+  "server_name": "hss-demo-ecs",
+  "security_group_name": "hss-demo-sg",
+  "ssh_source_cidr": "0.0.0.0/0",
+  "eip_bandwidth_mbps": 1,
+  "system_disk_gb": 40
+}

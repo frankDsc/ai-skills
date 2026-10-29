@@ -1,0 +1,94 @@
+<svg viewBox="0 0 1200 700" id="arch" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse">
+      <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#f6e2e2" stroke-width="1"/>
+    </pattern>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#C7000B"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#9aa0a6"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="700" fill="#ffffff"/>
+  <rect width="1200" height="700" fill="url(#grid)" opacity="0.55"/>
+
+  <text x="40" y="42" font-size="16" font-weight="700" fill="#9E0008">控制面（身份 / 审计）</text>
+  <line x1="40" y1="52" x2="300" y2="52" stroke="#C7000B" stroke-width="2"/>
+
+  <g id="nIam" class="node">
+    <rect x="480" y="64" width="150" height="116" rx="12" fill="#FDECEC" stroke="#C7000B" stroke-width="1.5"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgNzIgNzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZXNjPkNyZWF0ZWQgd2l0aCBQaXhzby48L2Rlc2M+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImEiPgo8cmVjdCB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMCIvPgo8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0idXJsKCNhKSI+CjxwYXRoIGQ9Im0xNiAwaDQwYzguOCAwIDE2IDcuMTkgMTYgMTZ2NDBjMCA4LjgtNy4yIDE2LTE2IDE2aC00MGMtOC44IDAtMTYtNy4yLTE2LTE2di00MGMwLTguODEgNy4yLTE2IDE2LTE2eiIgZmlsbD0iIzE0NzZGRiIgZmlsbC1ydWxlPSJldmVub2RkIi8+CjxwYXRoIGQ9Im01Ni43IDE4YzEuNyAwIDMuMyAxLjUgMy4zIDMuMzl2MjkuMjFjMCAxLjktMS40IDMuNC0zLjMgMy40aC00MS40Yy0xLjcgMC0zLjMtMS42MS0zLjMtMy40di0yOS4yMWMwLTEuODkgMS40LTMuMzkgMy4zLTMuMzloNDEuNHptLTMxLjkgOGMtMi41IDAtNC42IDIuMS00LjYgNC43djMuNGMwIDEuNCAwLjYgMi43IDEuNyAzLjZ2MC41Yy0wLjIgMC4xLTAuOCAwLjMtMS4yIDAuNC0xLjUgMC40LTMuNyAxLjEtMy43IDMuMXYxLjY5YzAgMC4zMSAwLjIgMC41IDAuNSAwLjVoMTQuNTljMC4zMSAwIDAuNS0wLjE5IDAuNS0wLjV2LTEuNjljMC0yLTIuMTktMi43LTMuNjktMy4xLTAuNC0wLjEtMS0wLjMtMS4yLTAuNHYtMC41YzEuMS0wLjkgMS43LTIuMiAxLjctMy42di0zLjRjMC0yLjYtMi4xLTQuNy00LjYtNC43em0yOC40IDE0aC0xNC40Yy0wLjQgMC0wLjggMC4zLTAuOCAwLjh2MC41YzAgMC40IDAuMyAwLjggMC44IDAuOGgxNC41YzAuNCAwIDAuOC0wLjMgMC44LTAuOHYtMC41Yy0wLjEtMC41LTAuNC0wLjgtMC45LTAuOHptMC01aC0xNC40Yy0wLjQgMC0wLjggMC4zLTAuOCAwLjh2MC41YzAgMC40IDAuMyAwLjggMC44IDAuOGgxNC41YzAuNCAwIDAuOC0wLjMgMC44LTAuOHYtMC41Yy0wLjEtMC41LTAuNC0wLjgtMC45LTAuOHptMC01aC0xNC40Yy0wLjQgMC0wLjggMC4zLTAuOCAwLjh2MC41YzAgMC40IDAuMyAwLjggMC44IDAuOGgxNC41YzAuNCAwIDAuOC0wLjMgMC44LTAuOHYtMC41Yy0wLjEtMC41LTAuNC0wLjgtMC45LTAuOHoiIGZpbGw9IiNmZmYiLz4KPC9nPgo8L3N2Zz4K" x="524" y="74" width="62" height="62"/>
+    <text x="555" y="160" text-anchor="middle" font-size="13" font-weight="600" fill="#333333">IAM 身份认证</text>
+    <text x="555" y="176" text-anchor="middle" font-size="11" fill="#999999">最小权限 · MFA</text>
+  </g>
+
+  <g id="nCts" class="node">
+    <rect x="680" y="64" width="150" height="116" rx="12" fill="#FDECEC" stroke="#C7000B" stroke-width="1.5"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgNzIgNzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZXNjPkNyZWF0ZWQgd2l0aCBQaXhzby48L2Rlc2M+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImEiPgo8cmVjdCB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMCIvPgo8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0idXJsKCNhKSIgZmlsbC1ydWxlPSJldmVub2RkIj4KPHBhdGggZD0ibTE2IDBoNDBjOC44IDAgMTYgNy4xOSAxNiAxNnY0MGMwIDguOC03LjIgMTYtMTYgMTZoLTQwYy04LjggMC0xNi03LjItMTYtMTZ2LTQwYzAtOC44MSA3LjItMTYgMTYtMTZ6IiBmaWxsPSIjOUY1M0U2Ii8+CjxwYXRoIGQ9Im0zNi40OSAxOGM1LjY5IDAgMTAuNTEgMy45MSAxMi4xNCA5LjMzIDYuMzkgMC43MiAxMS4zNyA2LjQgMTEuMzcgMTMuMjkgMCA3LjI4LTUuNTQgMTMuMjEtMTIuNDMgMTMuMzhoLTAuMy03LjkxYy00LjU1LTAuOTEtNy4yNy0zLjItOC41NC02LjQ4LTAuOC0yLjA3LTAuOTMtNC4yOS0wLjY3LTYuMjlsMC4wNi0wLjQyIDAuMDQtMC4xOWMwLjA5LTAuNC0wLjE1LTAuODgtMC41NS0wLjk4LTAuNC0wLjA4LTAuODEgMC4xNy0wLjkgMC41Ny0wLjAxIDAuMDQtMC4wMyAwLjEyLTAuMDQgMC4xOWwtMC4wNSAwLjI3LTAuMDUgMC4zNWMtMC4yOSAyLjIzLTAuMTUgNC42OSAwLjc2IDcuMDMgMC45OSAyLjU3IDIuNzQgNC41OCA1LjM2IDUuOTRoLTEwLjc3Yy02LjctMC4zOS0xMi4wMS02LjIzLTEyLjAxLTEzLjM3IDAtNy4yNSA1LjUtMTMuMTUgMTIuMzctMTMuMzYgMS42NS01LjM4IDYuNDUtOS4yNiAxMi4xMi05LjI2em0yLjUxIDEwLjMyLTEyLjU2IDUuNzIgMi44NCAyLjAyIDAuNzcgMi44IDEuODYtMS4zNiAzLjE3IDEuOTEgMy45Mi0xMS4wOXoiIGZpbGw9IiNmZmYiLz4KPC9nPgo8L3N2Zz4K" x="724" y="74" width="62" height="62"/>
+    <text x="755" y="160" text-anchor="middle" font-size="13" font-weight="600" fill="#333333">CTS 云审计</text>
+    <text x="755" y="176" text-anchor="middle" font-size="11" fill="#999999">全程操作留痕</text>
+  </g>
+
+  <line x1="555" y1="180" x2="555" y2="276" stroke="#9aa0a6" stroke-width="1.7" stroke-dasharray="5 4" marker-end="url(#arrowGray)"/>
+  <line x1="755" y1="180" x2="755" y2="276" stroke="#9aa0a6" stroke-width="1.7" stroke-dasharray="5 4" marker-end="url(#arrowGray)"/>
+
+  <text x="40" y="300" font-size="16" font-weight="700" fill="#9E0008">业务 / 攻击路径</text>
+  <line x1="40" y1="310" x2="300" y2="310" stroke="#C7000B" stroke-width="2"/>
+
+  <g id="nAttacker" class="node">
+    <circle cx="110" cy="440" r="52" fill="#2b2b2b"/>
+    <text x="110" y="456" text-anchor="middle" font-size="34" fill="#ffffff">&#128128;</text>
+    <text x="110" y="522" text-anchor="middle" font-size="13" font-weight="600" fill="#444444">攻击者</text>
+  </g>
+
+  <g id="nBoundary" class="node">
+    <rect x="250" y="360" width="180" height="160" rx="12" fill="#FFF7E6" stroke="#D98200" stroke-width="1.8"/>
+    <text x="340" y="390" text-anchor="middle" font-size="13" font-weight="600" fill="#8A6A00">公网 EIP + 安全组</text>
+    <text x="340" y="414" text-anchor="middle" font-size="11" fill="#B58500">SSH 白名单</text>
+    <text x="340" y="434" text-anchor="middle" font-size="11" fill="#B58500">最小放行</text>
+    <text x="340" y="470" text-anchor="middle" font-size="11" fill="#B58500">hss-demo-sg</text>
+    <text x="340" y="492" text-anchor="middle" font-size="11" fill="#B58500">123.60.219.95</text>
+  </g>
+
+  <rect x="470" y="284" width="400" height="296" rx="14" fill="#F2F7FE" stroke="#2C6CB0" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <text x="490" y="310" font-size="12" font-weight="600" fill="#1E4F86">VPC vpc-default</text>
+  <image href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgNzIgNzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZXNjPkNyZWF0ZWQgd2l0aCBQaXhzby48L2Rlc2M+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImEiPgo8cmVjdCB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMCIvPgo8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0idXJsKCNhKSIgZmlsbC1ydWxlPSJldmVub2RkIj4KPHBhdGggZD0ibTE2IDBoNDBjOC44IDAgMTYgNy4yIDE2IDE2djQwYzAgOC44LTcuMiAxNi0xNiAxNmgtNDBjLTguOCAwLTE2LTcuMi0xNi0xNnYtNDBjMC04LjggNy4yLTE2IDE2LTE2eiIgZmlsbD0iI0Y4NTgzNSIvPgo8cGF0aCBkPSJtMzYgMThjNiAwIDExIDQuMSAxMi4zIDkuNyA2LjYgMC44IDExLjcgNi4zIDExLjcgMTMuMSAwIDcuMy01LjkgMTMuMi0xMy4yIDEzLjJoLTIxLjZjLTcuMyAwLTEzLjItNS45LTEzLjItMTMuMiAwLTYuMyA0LjUtMTEuNiAxMC41LTEyLjlsMi45IDExLjNjLTAuOCAwLjUtMS40IDEuNS0xLjQgMi41IDAgMS43IDEuMyAzIDMgM3MzLTEuMyAzLTNjMC0wLjUtMC4xLTEtMC4zLTEuNGw2LjctNy4xYzAuNSAwLjMgMSAwLjUgMS42IDAuNSAxLjcgMCAzLTEuMyAzLTNzLTEuMy0zLTMtM2MtMS4yIDAtMi4yIDAuNy0yLjcgMS42bC0xMS4yLTNjMS43LTQuOCA2LjQtOC4zIDExLjktOC4zem0tMTEuMyAxMC42IDEwLjMgMi44YzAgMC4xIDAgMC4yIDAuMDkgMC4zbC02Ljk5IDcuM2MtMC4zLTAuMS0wLjUtMC4yLTAuOC0wLjJsLTIuNi0xMC4yeiIgZmlsbD0iI2ZmZiIvPgo8L2c+Cjwvc3ZnPgo=" x="800" y="290" width="28" height="28" opacity="0.9"/>
+
+  <g id="nEcs" class="node">
+    <rect x="520" y="350" width="160" height="180" rx="12" fill="#ffffff" stroke="#2C6CB0" stroke-width="1.8"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgNzIgNzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZXNjPkNyZWF0ZWQgd2l0aCBQaXhzby48L2Rlc2M+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImEiPgo8cmVjdCB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMCIvPgo8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0idXJsKCNhKSIgZmlsbC1ydWxlPSJldmVub2RkIj4KPHBhdGggZD0ibTE2IDBoNDBjOC44IDAgMTYgNy4yIDE2IDE2djQwYzAgOC44LTcuMiAxNi0xNiAxNmgtNDBjLTguOCAwLTE2LTcuMi0xNi0xNnYtNDBjMC04LjggNy4yLTE2IDE2LTE2eiIgZmlsbD0iI0Y4NTgzNSIvPgo8cGF0aCBkPSJtMzYuNDkgMThjNS42OSAwIDEwLjUxIDMuOTIgMTIuMTQgOS4zMyA2LjM5IDAuNzIgMTEuMzcgNi40IDExLjM3IDEzLjMgMCA3LjI4LTUuNTQgMTMuMi0xMi40MyAxMy4zN2gtMC4zLTIzLjI2Yy02LjctMC40LTEyLjAxLTYuMjQtMTIuMDEtMTMuMzcgMC03LjI2IDUuNS0xMy4xNiAxMi4zNy0xMy4zNyAxLjY1LTUuMzcgNi40NS05LjI2IDEyLjEyLTkuMjZ6bS0xMy40MSAyOC4zNWMtMC41NiAwLjA0LTEuMDggMC41MS0xLjA4IDEuMDkgMCAwLjYxIDAuNDggMS4xIDEuMDcgMS4xbDI1Ljg1IDAuMTFjMC41Ni0wLjA0IDEuMDgtMC41MSAxLjA4LTEuMDkgMC0wLjYxLTAuNDgtMS4xLTEuMDctMS4xbC0yNS44NS0wLjExem0yMy45OS0xMi4zNWgtMjIuMTRjLTIuNzIgMC00LjkzIDIuMjEtNC45MyA0LjkzdjAuMTNjMCAyLjcyIDIuMjEgNC45MyA0LjkzIDQuOTNoMjIuMTNjMi43MiAwIDQuOTMtMi4yMSA0LjkzLTQuOTN2LTAuMTNjMC4wMS0yLjcyLTIuMi00LjkzLTQuOTItNC45M3ptLTAuMDcgMmMxLjY2IDAgMyAxLjM0IDMgM3MtMS4zNCAzLTMgMy0zLTEuMzQtMy0zIDEuMzQtMyAzLTN6IiBmaWxsPSIjZmZmIi8+CjwvZz4KPC9zdmc+Cg==" x="552" y="360" width="96" height="96"/>
+    <text x="600" y="478" text-anchor="middle" font-size="13" font-weight="600" fill="#1E4F86">ECS 主机</text>
+    <text x="600" y="498" text-anchor="middle" font-size="11" fill="#3A6EA5" id="ecs-name">hss-demo-ecs</text>
+    <text x="600" y="516" text-anchor="middle" font-size="10" fill="#3A6EA5">EulerOS 3.0 · 1核2GB</text>
+  </g>
+
+  <g id="nHss" class="node">
+    <rect x="900" y="350" width="190" height="180" rx="12" fill="#C7000B"/>
+    <image href="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgNzIgNzIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxkZXNjPkNyZWF0ZWQgd2l0aCBQaXhzby48L2Rlc2M+CjxkZWZzPgo8Y2xpcFBhdGggaWQ9ImEiPgo8cmVjdCB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMCIvPgo8L2NsaXBQYXRoPgo8L2RlZnM+CjxnIGNsaXAtcGF0aD0idXJsKCNhKSIgZmlsbC1ydWxlPSJldmVub2RkIj4KPHBhdGggZD0ibTE1Ljk1IDBoNDBjOC44IDAgMTYgNy4xOSAxNiAxNnY0MGMwIDguOC03LjIgMTYtMTYgMTZoLTQwYy04LjggMC0xNi03LjItMTYtMTZ2LTQwYzAtOC44MSA3LjItMTYgMTYtMTZ6IiBmaWxsPSIjMTQ3NkZGIi8+CjxwYXRoIGQ9Im0zNS45NSAxMmMwLjkgMCAxLjcgMC4yIDIuMyAwLjcgMS43IDEuMyAzLjUgMi45IDguMSA1LjA5IDIuMyAxLjEgNi45IDIuNiA5LjIgMy40MSAxLjUgMC41IDIuNSAxLjkgMi4zIDMuNC0wLjQgNC45LTEuNiAxNC42LTQuNiAyMC42LTMuNSA2LjktMTIuMiAxMi4xOS0xNS42IDE0LjMtMC41IDAuMy0xLjEgMC41LTEuNyAwLjVzLTEuMi0wLjItMS43LTAuNWMtMy40LTIuMTEtMTIuMi03LjQtMTUuNi0xNC4zLTMtNi00LjItMTUuNy00LjYtMjAuNi0wLjEtMS42IDAuOC0yLjkgMi4zLTMuNCAyLjMtMC44MSA2LjktMi4zMSA5LjItMy40MSA0LjYtMi4yOSA2LjQtMy43OSA4LjEtNS4wOSAwLjYtMC41IDEuNC0wLjcgMi4zLTAuN3ptNy43IDEwLjg5aC0xNS40Yy0xLjIgMC0yLjIgMS0yLjIgMi4yMXYyMS43OWMwIDEuMjEgMSAyLjIxIDIuMiAyLjIxaDE1LjRjMS4yIDAgMi4yLTEgMi4yLTIuMjF2LTIxLjc5YzAtMS4yMS0xLTIuMjEtMi4yLTIuMjF6bS03LjcgMTUuNDFjMS45IDAgMy40IDEuNSAzLjQgMy4zIDAgMS43OS0xLjUgMy4yOS0zLjQgMy4yOXMtMy40LTEuNS0zLjQtMy4yOWMwLTEuOCAxLjUtMy4zIDMuNC0zLjN6bTAgMmMtMC44IDAtMS40IDAuNTktMS40IDEuMyAwIDAuNyAwLjYgMS4yOSAxLjQgMS4yOXMxLjQtMC41OSAxLjQtMS4yOWMtMC4xLTAuNzEtMC43LTEuMy0xLjQtMS4zem01LjYtNy45MWMwLjYgMCAxIDAuNDEgMSAxIDAgMC42MS0wLjQgMS0xIDFoLTExLjJjLTAuNiAwLTEtMC4zOS0xLTEgMC0wLjU5IDAuNC0xIDEtMWgxMS4yem0wLTRjMC42IDAgMSAwLjQxIDEgMSAwIDAuNjEtMC40IDEtMSAxaC0xMS4yYy0wLjYgMC0xLTAuMzktMS0xIDAtMC41OSAwLjQtMSAxLTFoMTEuMnoiIGZpbGw9IiNmZmYiLz4KPC9nPgo8L3N2Zz4K" x="958" y="360" width="74" height="74"/>
+    <text x="995" y="462" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">HSS 安全中心</text>
+    <text x="995" y="482" text-anchor="middle" font-size="11" fill="#FFD9DB">企业版 · 按需</text>
+    <text x="995" y="502" text-anchor="middle" font-size="11" fill="#FFD9DB" id="hss-state">实时检测中</text>
+  </g>
+
+  <path id="pa1" d="M 162 440 L 250 440" stroke="#C7000B" stroke-width="2.6" stroke-dasharray="7 5" fill="none" marker-end="url(#arrowRed)" class="dash"/>
+  <path id="pa2" d="M 430 440 L 520 440" stroke="#C7000B" stroke-width="2.6" stroke-dasharray="7 5" fill="none" marker-end="url(#arrowRed)" class="dash"/>
+  <path id="pd" d="M 680 440 L 900 440" stroke="#C7000B" stroke-width="2.6" stroke-dasharray="7 5" fill="none" marker-end="url(#arrowRed)" class="dash" opacity="0.3"/>
+
+  <circle id="attackDot" cx="0" cy="0" r="8" fill="#C7000B" opacity="0"/>
+  <circle id="detectDot" cx="0" cy="0" r="7" fill="#ff5252" opacity="0"/>
+
+  <g id="alertBadge" opacity="0">
+    <rect x="958" y="308" width="90" height="30" rx="15" fill="#C7000B"/>
+    <text x="1003" y="328" text-anchor="middle" font-size="12" fill="#ffffff" id="alertBadgeText">告警 +1</text>
+  </g>
+
+  <g transform="translate(40, 610)">
+    <line x1="0" y1="0" x2="36" y2="0" stroke="#C7000B" stroke-width="2.6"/>
+    <text x="44" y="4" font-size="12" fill="#666666">业务 / 攻击流（实线）</text>
+    <line x1="230" y1="0" x2="266" y2="0" stroke="#9aa0a6" stroke-width="1.8" stroke-dasharray="5 4"/>
+    <text x="274" y="4" font-size="12" fill="#666666">控制 / 审计流（虚线）</text>
+  </g>
+
+  <text x="40" y="660" font-size="11" fill="#999999">图标来源：华为云官方图标库 huaweicloud-latam/drawio-libraries v3.2（color 版）&#183; 安全组为通用边界（官方库无独立图标）</text>
+</svg>
