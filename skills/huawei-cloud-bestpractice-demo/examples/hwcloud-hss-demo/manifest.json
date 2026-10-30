@@ -13,10 +13,10 @@
   "nodes": [
     { "id": "iam", "label": "IAM 身份认证", "sub": "攻击者绕过", "icon": "iam", "col": 1, "row": 0 },
     { "id": "cts", "label": "CTS 云审计", "sub": "操作留痕", "icon": "cts", "col": 3, "row": 0 },
-    { "id": "attacker", "label": "攻击者", "sub": "绕过 IAM · 直击 VM", "icon": "", "col": 0, "row": 1 },
-    { "id": "boundary", "label": "公网 EIP + 安全组", "sub": "SSH 白名单", "icon": "", "col": 1, "row": 1 },
+    { "id": "attacker", "label": "攻击者", "sub": "绕过 IAM · 直击 VM", "icon": "attacker", "col": 0, "row": 1 },
+    { "id": "boundary", "label": "公网 EIP + 安全组", "sub": "SSH 白名单", "icon": "eip", "col": 1, "row": 1 },
     { "id": "vpc", "type": "group", "label": "VPC", "sub": "vpc-default", "icon": "vpc", "col": 2, "row": 1, "w": 2, "h": 2, "children": ["hss"] },
-    { "id": "hss", "type": "group", "label": "HSS 主机安全", "sub": "Agent 安装在 VM 内", "w_px": 320, "h_px": 250, "children": ["ecs"] },
+    { "id": "hss", "type": "group", "label": "HSS 主机安全", "sub": "Agent 安装在 VM 内", "icon": "hss", "w_px": 320, "h_px": 250, "children": ["ecs"] },
     { "id": "ecs", "label": "ECS 主机", "sub": "hss-demo-ecs", "icon": "ecs" }
   ],
   "edges": [
