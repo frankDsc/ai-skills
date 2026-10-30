@@ -117,7 +117,7 @@ def build_svg(manifest, icons_dir):
     H = max(int(maxy), 640)
 
     o = []
-    o.append(f'<svg viewBox="0 0 {W} {H}" id="arch" xmlns="http://www.w3.org/2000/svg">')
+    o.append(f'<svg viewBox="0 0 {W} {H}" id="arch" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">')
     o.append('''<defs>
       <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse">
         <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#f6e2e2" stroke-width="1"/>
@@ -181,7 +181,7 @@ def build_svg(manifest, icons_dir):
         o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" '
                  f'fill="#ffffff" stroke="#C7000B" stroke-width="1.6"/>')
         if uri:
-            o.append(f'<image href="{uri}" x="{x + (w - 64) / 2}" y="{y + 14}" width="64" height="64"/>')
+            o.append(f'<image xlink:href="{uri}" href="{uri}" x="{x + (w - 64) / 2}" y="{y + 14}" width="64" height="64"/>')
         o.append(f'<text x="{x + w / 2}" y="{y + 104}" text-anchor="middle" font-size="14" '
                  f'font-weight="600" fill="#333333">{n["label"]}</text>')
         if n.get("sub"):
