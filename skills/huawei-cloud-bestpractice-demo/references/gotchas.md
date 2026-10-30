@@ -61,9 +61,3 @@
 ## 10. 费用与清理
 
 按需资源（ECS/EIP/HSS）关机/释放即停止计费；演示结束务必清理，详见 `pricing.md`。
-
-## 11. Safari / WKWebView 的 SVG `<image>` 必须用 `xlink:href`
-
-内联 SVG 里的 `<image href="data:...">` 在 Chrome 正常，但在 **Safari / WKWebView（macOS 内嵌浏览器）** 里**不渲染**（图标消失）。
-修复：SVG 根节点声明 `xmlns:xlink="http://www.w3.org/1999/xlink"`，`<image>` 同时写 `xlink:href` 和 `href`。
-`lib/arch.py` 已内置该修复。
