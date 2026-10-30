@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="demo-token" content="{{ csrf }}">
+  <title>HSS 主机安全 · 最佳实践实验室</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<aside class="sidebar">
+  <a class="brand" href="/" aria-label="返回实验室首页"><span class="brand-icon">H</span><div>HUAWEI CLOUD<small>SECURITY LAB</small></div></a>
+  <div class="nav-label">工作空间</div>
+  <nav><a class="selected" href="#overview"><span>◈</span> 防护总览</a><a href="#architecture"><span>⌘</span> 方案架构</a><a href="#workflow"><span>▤</span> 部署流程</a><a href="#exercises"><span>▷</span> 受控演练</a><a href="#events"><span>⌁</span> 检测与证据</a></nav>
+  <div class="sidebar-footer"><span class="live-dot"></span> 北京四 cn-north-4<p>专用测试环境<br>真实云资源 · 本机控制台</p><div class="version">LAB / HSS 01</div></div>
+</aside>
+<main id="overview">
+  <div class="topbar"><span>安全最佳实践 <span class="slash">/</span> 企业主机安全</span><span class="pill" id="connection">正在连接云账户</span></div>
+  <header class="page-header"><div><div class="eyebrow">HOST SECURITY SERVICE</div><h1>把主机防护，变成可验证的闭环<span>。</span></h1><p>部署 Agent、开启防护、受控演练，再用云端真实告警验证结果。</p></div><button class="secondary" id="refresh">↻ 刷新云端状态</button></header>
+  <div class="notice" id="error-banner" role="alert" hidden></div>
+  <section class="metrics" aria-label="实时云端指标">
+    <article class="metric"><span>专用演练主机</span><strong id="ecs-status">—</strong><small id="host-name">等待云端状态</small><b class="metric-num">01</b></article>
+    <article class="metric"><span>HSS Agent</span><strong id="agent-status">—</strong><small>以 HSS 实际上报为准</small><b class="metric-num">02</b></article>
+    <article class="metric"><span>企业版防护</span><strong id="protect-status">—</strong><small id="protection-version">尚未查询</small><b class="metric-num">03</b></article>
+    <article class="metric"><span>真实安全事件</span><strong id="event-count">—</strong><small id="event-hint">等待 HSS 查询</small><b class="metric-num">04</b></article>
+  </section>
+  <section class="panel architecture" id="architecture"><div class="panel-head"><div><div class="eyebrow">01 / ARCHITECTURE</div><h2>主机侧防护与云端检测协同</h2></div><div class="legend"><span class="line red"></span> 演练路径 <span class="line dashed"></span> 管理与遥测</div></div><div class="diagram">{{ architecture | safe }}</div><div class="arch-foot"><span>官方服务图标 · 独立路由走廊</span><span>CTS 为可选目标，本 Demo 不自动开通</span></div></section>
+  <section id="workflow" class="panel workflow"><div class="panel-head"><div><div class="eyebrow">02 / DEPLOYMENT</div><h2>四步接入，状态可追溯</h2></div><span id="busy-label" class="muted">每次仅执行一个操作</span></div>
+    <div class="steps">
+      <article class="step" data-stage="preflight"><div class="step-head"><span class="step-index">01</span><span class="stage-state">未校验</span></div><h3>账户与环境预检</h3><p>校验 IAM 项目、可用区、HSS 权限和主机规格。</p><button class="action secondary" data-action="preflight">执行预检</button></article>
+      <article class="step" data-stage="provision"><div class="step-head"><span class="step-index">02</span><span class="stage-state">未创建</span></div><h3>创建独立演练环境</h3><p>小规格 ECS、40 GB 系统盘和仅允许 /32 SSH 的安全组。</p><button class="action secondary" data-action="provision">创建环境</button></article>
+      <article class="step" data-stage="install"><div class="step-head"><span class="step-index">03</span><span class="stage-state">未上线</span></div><h3>安装 HSS Agent</h3><p>获取北京四官方安装脚本，并等待真实 Agent 上线。</p><button class="action secondary" data-action="install">安装 Agent</button></article>
+      <article class="step" data-stage="protect"><div class="step-head"><span class="step-index">04</span><span class="stage-state">未开启</span></div><h3>开启企业版防护</h3><p>按需计费，只有云端确认开启后才开放受控演练。</p><button class="action primary" data-action="protect">开启防护</button></article>
+    </div>
+    <div class="resource-bar"><div><span>Demo ID</span><code id="demo-id">—</code></div><div><span>公网地址</span><code id="public-ip">—</code></div><div><span>SSH 来源</span><code id="ssh-cidr">—</code></div><div><span>部署规格</span><code id="flavor">—</code></div></div>
+  </section>
+  <section class="two-col" id="exercises">
+    <article class="panel exercise"><div class="panel-head"><div><div class="eyebrow">03 / CONTROLLED EXERCISE</div><h2>用一次受控行为，验证防护链路</h2></div><span class="tag">专用主机</span></div>
+      <div class="exercise-body"><span class="scenario-icon">⌁</span><div><h3>文件提权检测</h3><p>创建只会立即退出的 <code>true</code> 测试副本，设置 SUID 属性。不投放恶意载荷、不建立外部回连。</p></div></div>
+      <div class="detection" id="detection-status"><span class="status-dot"></span><span>先确认主机与 Agent 均已就绪</span></div>
+      <div class="exercise-actions"><button class="action primary" data-action="exercise">▷ 开始受控演练</button><button class="action secondary" data-action="cleanup_artifacts">清理演练文件</button><button class="action secondary" data-action="acknowledge">标记演练告警已处理</button></div>
+      <p class="helper">执行成功 ≠ 已检出。告警出现时间取决于 HSS 策略和上报，页面每 5 秒查询实际结果。</p>
+    </article>
+    <article class="panel"><div class="panel-head"><div><div class="eyebrow">04 / RISK REVIEW</div><h2>风险复核</h2></div><button class="action text-button" data-action="risks">查询风险 ↗</button></div><div id="risk-summary" class="risk-empty"><span>⊞</span><strong>把漏洞和基线一起纳入复核</strong><p>读取 HSS 当前主机报告；未上报、无权限和“无风险”会分别展示。</p></div><div class="risk-notes"><span>最小权限访问</span><span>专用网络隔离</span><span>可追溯执行记录</span></div></article>
+  </section>
+  <section class="panel" id="events"><div class="panel-head"><div><div class="eyebrow">05 / DETECTION & EVIDENCE</div><h2>真实告警，与执行记录分开展示</h2></div><span class="muted" id="last-update">等待更新</span></div><div class="evidence-tabs" role="tablist"><button class="tab active" id="tab-alerts" role="tab" aria-selected="true">HSS 云端告警</button><button class="tab" id="tab-jobs" role="tab" aria-selected="false">后端执行记录</button></div><div id="alert-feed" class="table-wrap"><div class="empty">正在读取 HSS 安全事件…</div></div><div id="job-feed" class="job-feed" hidden></div></section>
+  <section class="cost-panel"><div><strong>演示结束后，释放资源以停止持续计费</strong><p>ECS、系统盘、EIP 与企业版 HSS 均可能产生费用；清理仅针对本 Demo 记录的资源。没有设置自动销毁。</p></div><button class="action danger" data-action="cleanup">释放 Demo 资源</button></section>
+  <footer><span>HSS BEST PRACTICE LAB</span><span>北京四 · 本机后端签名 · 凭证不进入浏览器</span></footer>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+</body></html>

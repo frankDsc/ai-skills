@@ -26,7 +26,8 @@ def _icon_group(icons_dir, icon, x, y, size):
     p = os.path.join(icons_dir, icon + ".svg")
     if not os.path.exists(p):
         return ""
-    raw = open(p, encoding="utf-8").read()
+    with open(p, encoding="utf-8") as source:
+        raw = source.read()
     m = re.search(r"<svg[^>]*>(.*)</svg>", raw, re.S)
     inner = m.group(1) if m else ""
     uid = "ic-" + re.sub(r"[^A-Za-z0-9_-]", "_", icon)

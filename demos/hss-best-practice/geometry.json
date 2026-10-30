@@ -1,0 +1,215 @@
+{
+  "nodes": [
+    {
+      "id": "iam",
+      "label": "IAM 身份与权限",
+      "sub": "云 API 认证 / 最小权限",
+      "icon": "iam",
+      "x": 270,
+      "y": 40,
+      "w": 170,
+      "h": 100
+    },
+    {
+      "id": "cts",
+      "label": "CTS 操作审计",
+      "sub": "控制面审计 · 未自动开通",
+      "icon": "cts",
+      "x": 780,
+      "y": 40,
+      "w": 180,
+      "h": 100
+    },
+    {
+      "id": "operator",
+      "label": "授权演练端",
+      "sub": "本机后端 / 固定动作",
+      "icon": "attacker",
+      "x": 40,
+      "y": 230,
+      "w": 170,
+      "h": 100
+    },
+    {
+      "id": "network",
+      "label": "EIP + 安全组",
+      "sub": "SSH 仅本机出口 /32",
+      "icon": "eip",
+      "x": 270,
+      "y": 230,
+      "w": 170,
+      "h": 100
+    },
+    {
+      "id": "ecs",
+      "label": "测试 ECS + Agent",
+      "sub": "Ubuntu · 专用演练主机",
+      "icon": "ecs",
+      "x": 540,
+      "y": 230,
+      "w": 180,
+      "h": 100
+    },
+    {
+      "id": "hss",
+      "label": "HSS 防护中心",
+      "sub": "企业版 / 真实云端状态",
+      "icon": "hss",
+      "x": 780,
+      "y": 230,
+      "w": 180,
+      "h": 100
+    },
+    {
+      "id": "alerts",
+      "label": "检测与告警",
+      "sub": "查询 HSS 实际返回",
+      "icon": "hss",
+      "x": 1020,
+      "y": 230,
+      "w": 180,
+      "h": 100
+    },
+    {
+      "id": "evidence",
+      "label": "复核与演练证据",
+      "sub": "本机记录 / 云端查询",
+      "icon": "",
+      "x": 780,
+      "y": 440,
+      "w": 180,
+      "h": 100
+    }
+  ],
+  "edges": [
+    {
+      "id": "iam-network",
+      "from": "iam",
+      "to": "network",
+      "points": [
+        [
+          355,
+          140
+        ],
+        [
+          355,
+          230
+        ]
+      ],
+      "control": true
+    },
+    {
+      "id": "operator-network",
+      "from": "operator",
+      "to": "network",
+      "points": [
+        [
+          210,
+          280
+        ],
+        [
+          270,
+          280
+        ]
+      ]
+    },
+    {
+      "id": "network-ecs",
+      "from": "network",
+      "to": "ecs",
+      "points": [
+        [
+          440,
+          280
+        ],
+        [
+          540,
+          280
+        ]
+      ]
+    },
+    {
+      "id": "ecs-hss",
+      "from": "ecs",
+      "to": "hss",
+      "points": [
+        [
+          720,
+          280
+        ],
+        [
+          780,
+          280
+        ]
+      ],
+      "control": true
+    },
+    {
+      "id": "hss-alerts",
+      "from": "hss",
+      "to": "alerts",
+      "points": [
+        [
+          960,
+          280
+        ],
+        [
+          1020,
+          280
+        ]
+      ]
+    },
+    {
+      "id": "hss-cts",
+      "from": "hss",
+      "to": "cts",
+      "points": [
+        [
+          870,
+          230
+        ],
+        [
+          870,
+          140
+        ]
+      ],
+      "control": true
+    },
+    {
+      "id": "hss-evidence",
+      "from": "hss",
+      "to": "evidence",
+      "points": [
+        [
+          870,
+          330
+        ],
+        [
+          870,
+          440
+        ]
+      ],
+      "control": true
+    },
+    {
+      "id": "alerts-evidence",
+      "from": "alerts",
+      "to": "evidence",
+      "points": [
+        [
+          1110,
+          330
+        ],
+        [
+          1110,
+          490
+        ],
+        [
+          960,
+          490
+        ]
+      ],
+      "control": true
+    }
+  ]
+}

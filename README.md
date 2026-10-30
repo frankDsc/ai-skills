@@ -9,7 +9,11 @@
 | [**architecture-diagram-tool**](skills/architecture-diagram-tool/) | **架构图工具**：云架构逻辑审视、官方服务图标、红白或厂商品牌配色、正交连线和几何碰撞检查；内置华为云 27 个 Draw.io 图标库 | ✅ 可用 |
 | [**huawei-cloud-bestpractice-demo**](skills/huawei-cloud-bestpractice-demo/) | **华为云最佳实践 Demo 生成器**（通用）：任意领域（安全/大数据/数据库/AI/容器/网络/存储）→ manifest → 官方图标架构图 + 动态 GUI（动作触发 + 架构图动画 + 事件流）+ **真实 ECS 资源**（后端 SSH 执行真实命令） | ✅ 可用 |
 
-## 架构图工具
+## 完整 Demo
+
+- [HSS 最佳实践实验室（前端 + 后端）](demos/hss-best-practice/)：北京四真实 ECS、Agent 安装、企业版防护、受控文件提权演练、实际 HSS 告警与限定资源清理。
+
+## 架构图工具使用
 
 调用 `$architecture-diagram-tool`，或说“使用架构图工具绘制华为云架构图”。将 `skills/architecture-diagram-tool` 完整复制到支持 `SKILL.md` 的运行环境的 Skill 目录，保留所有相对资源路径。
 

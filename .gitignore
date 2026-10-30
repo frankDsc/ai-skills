@@ -5,6 +5,10 @@ state.json
 *.pem
 *.key
 credentials.json
+credentials.csv
+.env
+.env.*
+!.env.example
 
 # 运行时产物
 __pycache__/
