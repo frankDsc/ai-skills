@@ -1,0 +1,8 @@
+interface:
+  display_name: "架构图工具"
+  short_description: "绘制不重叠、不交叉的云架构图"
+  brand_color: "#C8102E"
+  default_prompt: "Use $architecture-diagram-tool to draw a clean, logically layered cloud architecture diagram with non-overlapping boxes and non-crossing connectors."
+
+policy:
+  allow_implicit_invocation: true
