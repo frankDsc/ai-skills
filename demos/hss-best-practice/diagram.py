@@ -14,8 +14,9 @@ NODES, EDGES = MANIFEST['nodes'], MANIFEST['edges']
 
 def build():
     icons = ROOT/'skills/huawei-cloud-bestpractice-demo/assets/icons'
-    out=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 580" role="img" aria-label="HSS 最佳实践架构：演练主机与防护中心分离，业务流与管理流分层">',
+    out=['<svg id="arch" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 580" role="img" aria-label="HSS 最佳实践架构：演练主机与防护中心分离，业务流与管理流分层">',
          '<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#c7000b"/></marker><marker id="ag" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#9b9eaa"/></marker></defs>',
+         '<defs><marker id="ad" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#177c57"/></marker></defs>',
          '<rect width="1240" height="580" fill="white"/>',
          '<rect x="485" y="170" width="270" height="225" rx="14" fill="#fff8f8" stroke="#edbbc0" stroke-dasharray="5 5"/>',
          '<text x="505" y="194" font-size="14" fill="#9a333c">独立 VPC / 子网</text>',
@@ -31,7 +32,7 @@ def build():
         icon=_icon_group(str(icons),n['icon'],x+14,y+16,30).replace('ic-'+n['icon'],'ic-'+n['id'])
         out.append(icon)
         out.append(f'<text x="{x+14}" y="{y+66}" fill="#23232d" font-size="16" font-weight="600">{escape(n["label"])}</text><text x="{x+14}" y="{y+86}" fill="#81818f" font-size="12">{escape(n["sub"])}</text></g>')
-    out.append('<text x="40" y="555" font-size="12" fill="#888896">实线：演练 / 检测结果　虚线：管理 / 遥测　CTS 是可选审计目标，不代表主机入侵告警</text><circle id="flow-dot" r="5" fill="#c7000b" visibility="hidden"/></svg>')
+    out.append('<text x="40" y="555" font-size="12" fill="#888896">红色：演练指令路径　绿色动画：已查询到真实告警　CTS 为可选审计目标</text><circle id="flow-halo" r="13" fill="#c7000b" opacity=".15" visibility="hidden"/><circle id="flow-dot" r="6" fill="#c7000b" visibility="hidden"/></svg>')
     return '\n'.join(out)
 
 

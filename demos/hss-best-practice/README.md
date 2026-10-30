@@ -7,6 +7,8 @@
 - [华为云最佳实践生成器](../../skills/huawei-cloud-bestpractice-demo/SKILL.md)：SDK 客户端、资源规格与 HSS 接入流程。
 - [架构图工具](../../skills/architecture-diagram-tool/SKILL.md)：官方图标、分层布局和正交连线检查。
 
+新增 [十种演练场景与官方依据](SCENARIOS.md)：可从卡片库或架构图工具栏选择。支持逐段攻击路径动画、到达节点响应、等待检测状态，以及仅由真实匹配告警触发的绿色检测链路。支持调速、暂停和不执行新动作的链路重播。
+
 ## 启动
 
 Python 3.10+。安装依赖并启动：
@@ -32,10 +34,10 @@ export HWC_CREDENTIALS_CSV="$HOME/Downloads/credentials.csv"
 2. **创建环境**：独立 VPC、子网、安全组，按需小规格 ECS、40 GB SAS 系统盘、1 Mbps 按流量 EIP。22 端口只允许操作者出口 `/32`。
 3. **安装 Agent**：获取北京四官方安装命令，安装后轮询 HSS，直到 Agent 在线。安装令牌不展示。
 4. **开启企业版**：使用 `hss.version.enterprise` 和 `on_demand`，等待云端防护状态确认。
-5. **受控演练**：在专用 ECS 创建只会立即退出的 `/usr/bin/true` 副本，设置 SUID。不会建立反弹连接、投放 Webshell 或运行挖矿程序。
-6. **验证**：每 5 秒读取当前主机真实 HSS 事件；执行成功与检出成功分别展示。超过 180 秒未出现匹配告警时明确提示待排查。事件匹配按主机、发生时间和提权事件类型，不声称是绝对精确的事件关联。
-7. **复核与处置**：查询主机漏洞及基线报告。空列表、扫描尚未上报与接口错误分开处理，不自动修复系统。清理测试文件后，可将本次主机时间窗口内的文件提权事件手动标为已处理，并复核云端实际状态。
-8. **清理**：先撤销并删除测试文件；完成演示后关闭 HSS，并删除本次记录的 ECS、系统盘、EIP、安全组、子网和 VPC。输入完整 Demo ID 后才允许释放。
+5. **受控演练**：选择 SUID、SGID、异常 Shell 副本、隔离 Webshell 特征文件、测试账号、计划任务、回环端口探测、tcpdump、strace、nc 等十种样式。Webshell 检测样本仅写入不对外提供 HTTP 的私有目录，不解释执行；不建立外部回连、不运行挖矿程序。
+6. **验证**：每 5 秒读取当前主机真实 HSS 事件；执行成功与检出成功分别展示。超过 180 秒未出现匹配告警时明确提示待排查。按主机、发生时间、场景事件类型和新事件 ID 关联；兼容 HSS 整秒精度，不声称是绝对精确的根因关联。
+7. **复核与处置**：查询主机漏洞及基线报告。空列表、扫描尚未上报与接口错误分开处理，不自动修复系统。清理演练产物后，可将最新一次演练匹配的事件手动标为已处理，并复核云端实际状态。
+8. **清理**：撤销并删除测试文件、账号和 cron 项；完成演示后关闭 HSS，并删除本次记录的 ECS、系统盘、EIP、安全组、子网和 VPC。输入完整 Demo ID 后才允许释放。
 
 当前版本不自动开通 CTS、CBR、SMN 或多区域容灾；架构图将 CTS 明确标为可选目标。主机入侵告警来自 HSS，而不是 CTS。
 
@@ -47,6 +49,7 @@ export HWC_CREDENTIALS_CSV="$HOME/Downloads/credentials.csv"
 | `GET /api/status` | 当前 ECS、Agent、防护、资源、计划及异步任务 |
 | `GET /api/events` | 当前 Demo 主机的真实 HSS 安全事件 |
 | `GET /api/actions` | 固定的后端动作清单 |
+| `GET /api/scenarios` | 十种场景、策略条件和官方参考 |
 | `POST /api/execute` | 执行允许的动作 ID，返回异步任务 ID |
 
 写操作必须由本机页面携带启动时生成的 `X-Demo-Token`；服务检查 Host、Origin 并拒绝并发云操作。没有任意命令执行接口。
@@ -58,7 +61,9 @@ CLI 可用于重复部署或清理：
 .venv/bin/python app.py --action provision
 .venv/bin/python app.py --action install
 .venv/bin/python app.py --action protect
+.venv/bin/python app.py --action prepare_scenarios
 .venv/bin/python app.py --action exercise
+.venv/bin/python app.py --action exercise --scenario tcpdump
 .venv/bin/python app.py --action cleanup_artifacts
 .venv/bin/python app.py --action acknowledge
 .venv/bin/python app.py --action cleanup --confirm '<demo-id>'
@@ -69,10 +74,11 @@ CLI 可用于重复部署或清理：
 ## 检查
 
 ```bash
-.venv/bin/python -m unittest -v test_app.py
+.venv/bin/python -m unittest -v test_app.py test_scenarios.py
 .venv/bin/python diagram.py
 .venv/bin/python ../../skills/architecture-diagram-tool/scripts/validate_geometry.py geometry.json
 node --check static/app.js
+node --check static/attack-chain.js
 ```
 
 HTTP 边界单测使用隔离替身，不会创建云资源；实际 Demo 不使用模拟后端。几何校验覆盖节点与连接线，VPC / Agent 防护边界是有意嵌套，需额外进行视觉检查。

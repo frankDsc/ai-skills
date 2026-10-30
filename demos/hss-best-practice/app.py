@@ -9,16 +9,18 @@ import time
 from flask import Flask, jsonify, request, render_template
 from cloud import Cloud, error_message
 from diagram import build
+from scenarios import SCENARIOS,get_scenario,match_events
 
 ACTIONS = {
     'preflight': ('账户与规格预检','校验区域、HSS 权限、镜像和 SSH 来源'),
     'provision': ('创建演练环境','专用 VPC / 安全组 / ECS / EIP，产生按需费用'),
     'install': ('安装 HSS Agent','获取官方安装命令，等待主机上线'),
     'protect': ('开启企业版防护','按需计费，等待云端防护状态确认'),
-    'exercise': ('执行文件提权演练','仅专用主机，一次性 true 测试副本，不连接外部目标'),
+    'exercise': ('执行选定场景演练','专用主机上的固定受控场景，目标与命令不可由浏览器自定义'),
+    'prepare_scenarios': ('准备演练依赖','仅在专用主机安装固定的四种测试工具'),
     'risks': ('查询漏洞与基线','读取 HSS 已上报的真实风险，不自动修复'),
-    'cleanup_artifacts': ('清理演练文件','撤销并删除专用 hss_demo_* 文件'),
-    'acknowledge': ('标记演练告警已处理','清理文件后，仅标记本次主机的文件提权演练事件'),
+    'cleanup_artifacts': ('清理演练产物','清理专用主机上的测试文件、账号与 cron 项'),
+    'acknowledge': ('标记演练告警已处理','清理产物后，仅标记本次主机与场景匹配的事件'),
     'cleanup': ('释放 Demo 资源','关闭 HSS 防护并释放本次记录的资源'),
 }
 
@@ -69,7 +71,14 @@ def create_app(cloud=None):
     def status():
         try:
             data=cached('status',cloud.snapshot,8)
-            return jsonify(**data,jobs=jobs[-20:],busy=lock.locked(),plan=cloud.state.get('plan'),last_exercise=cloud.state.get('last_exercise'))
+            run=dict(cloud.state['last_exercise']) if cloud.state.get('last_exercise') else None
+            if run:
+                try:
+                    run['matched_events']=match_events(run,cached('events',cloud.events,5)['events'])
+                    run['detection_status']='detected' if run['matched_events'] else 'pending'
+                except Exception as exc:
+                    run['detection_status']='query_error';run['detection_error']=error_message(exc)
+            return jsonify(**data,jobs=jobs[-20:],busy=lock.locked(),plan=cloud.state.get('plan'),last_exercise=run)
         except Exception as exc:
             return jsonify(error=error_message(exc)),502
 
@@ -82,23 +91,33 @@ def create_app(cloud=None):
     def actions():
         return jsonify(actions=[{'id':k,'label':v[0],'description':v[1]} for k,v in ACTIONS.items()])
 
+    @app.get('/api/scenarios')
+    def scenarios():
+        return jsonify(scenarios=SCENARIOS)
+
     @app.post('/api/execute')
     def execute():
         data=request.get_json(silent=True) or {}
         if not isinstance(data,dict):return jsonify(error='请求必须是 JSON 对象'),400
         action=data.get('id')
         if not isinstance(action,str) or action not in ACTIONS:return jsonify(error='未知动作'),400
+        scenario_id=data.get('scenario_id','suid')
+        if action=='exercise':
+            try:get_scenario(scenario_id)
+            except ValueError:return jsonify(error='未知演练场景'),400
         if action=='cleanup' and data.get('confirmation')!=cloud.state['demo_id']:
             return jsonify(error='释放资源需要输入完整 Demo ID'),400
         if not lock.acquire(blocking=False):return jsonify(error='已有操作执行中，请等待完成'),409
         job={'id':secrets.token_hex(6),'action':action,'label':ACTIONS[action][0],'status':'running','started_at':int(time.time()*1000)}
+        if action=='exercise':
+            job['scenario_id']=scenario_id;job['label']=get_scenario(scenario_id)['name']
         jobs.append(job)
         del jobs[:-20]
 
         def run():
             try:
                 if not cloud.project_id:cloud.connect()
-                job['result']=getattr(cloud,action)()
+                job['result']=cloud.exercise(scenario_id) if action=='exercise' else getattr(cloud,action)()
                 job['status']='success'
             except Exception as exc:
                 message=error_message(exc)
@@ -120,6 +139,7 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--action',choices=list(ACTIONS))
     parser.add_argument('--confirm')
+    parser.add_argument('--scenario',default='suid',choices=[s['id'] for s in SCENARIOS])
     args=parser.parse_args()
     cloud=Cloud()
     try:
@@ -127,7 +147,7 @@ if __name__=='__main__':
         if args.action:
             if args.action=='cleanup' and args.confirm!=cloud.state['demo_id']:
                 raise ValueError('清理须提供 --confirm <demo-id>')
-            result=getattr(cloud,args.action)()
+            result=cloud.exercise(args.scenario) if args.action=='exercise' else getattr(cloud,args.action)()
             print(json.dumps(result,ensure_ascii=False,indent=2))
         else:
             create_app(cloud).run(host='127.0.0.1',port=8899,threaded=True,debug=False)

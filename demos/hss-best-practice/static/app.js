@@ -1,6 +1,8 @@
 'use strict';
 const $=id=>document.getElementById(id);
-let current=null, events=[], toastTimer, refreshing=false, activeAnimation=false;
+let current=null, events=[], toastTimer, refreshing=false;
+let scenarios=[],selectedScenario='suid';
+const chain=new window.HssAttackChain();
 const seenJobs=new Set();
 const token=document.querySelector('meta[name="demo-token"]').content;
 const labelMap={online:'在线',not_installed:'未安装',offline:'离线',opened:'已开启',closed:'未开启',ACTIVE:'运行中',BUILD:'创建中',SHUTOFF:'已关机'};
@@ -23,9 +25,10 @@ function renderStatus(d){
  $('busy-label').textContent=d.busy?'● 操作执行中，请稍候':'每次仅执行一个操作';
  const checks={...d.checks,install:d.host.agent_status==='online',protect:d.host.protect_status==='opened'};
  document.querySelectorAll('.step').forEach(el=>{const done=!!checks[el.dataset.stage];el.classList.toggle('done',done);el.querySelector('.stage-state').textContent=done?'已完成':'待执行';});
- const prerequisites={provision:!!d.checks.preflight,install:!!d.resources.server_id,protect:d.host.agent_status==='online',exercise:d.host.protect_status==='opened',risks:!!d.resources.server_id,cleanup_artifacts:!!d.resources.server_id,acknowledge:!!d.checks.artifacts_clean,cleanup:Object.keys(d.resources).length>0,preflight:true};
+ const prerequisites={provision:!!d.checks.preflight,install:!!d.resources.server_id,protect:d.host.agent_status==='online',exercise:d.host.protect_status==='opened'&&d.host.agent_status==='online'&&!!scenarios.length,prepare_scenarios:!!d.resources.server_id,risks:!!d.resources.server_id,cleanup_artifacts:!!d.resources.server_id,acknowledge:!!d.checks.artifacts_clean,cleanup:Object.keys(d.resources).length>0,preflight:true};
  document.querySelectorAll('button.action').forEach(b=>b.disabled=d.busy||!prerequisites[b.dataset.action]);
  banner(d.errors||[]);renderJobs(d.jobs||[]);renderDetection();
+ chain.sync(d.last_exercise,scenarios.find(s=>s.id===(d.last_exercise?.scenario_id||'suid')));
 }
 function renderJobs(jobs){
  const box=$('job-feed');box.replaceChildren();
@@ -60,28 +63,25 @@ function renderEvents(d){
  const body=element('tbody');for(const e of events){const row=element('tr');row.append(element('td',e.event_name||e.event_class_name||'未命名事件'));const sev=element('td');sev.append(element('span',String(e.severity??'未知'),'severity'));row.append(sev,element('td',time(e.occur_time)),element('td',({handled:'已处理',unhandled:'未处理',ignored:'已忽略'})[e.handle_status]||String(e.handle_status??'未返回')));body.append(row);}table.append(body);box.append(table);renderDetection();
 }
 function renderDetection(){
- const el=$('detection-status'),started=current?.last_exercise?.started_at;
- const name=e=>(e.event_name||'')+' '+(e.event_class_name||'');
- const matching=events.find(e=>Number(e.occur_time)>=Number(started)&&/privilege|提权|suid/i.test(name(e)));
+ const el=$('detection-status'),run=current?.last_exercise,started=run?.started_at;
+ const matching=run?.matched_events?.[0];
  let message='先确认主机与 Agent 均已就绪',tone='';
- if(started){if(matching){message='真实检出：'+(matching.event_name||matching.event_class_name)+'（本次演练时间窗口）';tone='good';}else{const seconds=Math.floor((Date.now()-started)/1000);message=seconds>180?'暂未检出：超过 180 秒，请检查规则、Agent 和事件延迟。':`等待真实 HSS 检出 · 已等待 ${Math.max(seconds,0)} 秒`;tone='warn';}}
+ if(started){if(matching){message='真实检出：'+(matching.event_name||matching.event_class_name)+'（'+(run.scenario_name||'文件提权')+'，主机/时间/类型匹配）';tone='good';}else if(run.detection_status==='query_error'){message='HSS 查询失败，当前不能判断是否检出';tone='bad';}else if(run.status==='execution_error'){message='动作执行异常，请查看后端记录，不能据此认定 HSS 已阻断';tone='bad';}else{const seconds=Math.floor((Date.now()-started)/1000);message=seconds>180?'暂未检出：超过 180 秒，请检查场景策略、版本和事件延迟。':`等待真实 HSS 检出 · 已等待 ${Math.max(seconds,0)} 秒`;tone='warn';}}
  else if(current?.host.protect_status==='opened'){message='防护已就绪，可以开始受控演练';tone='good';}
  el.className='detection '+tone;el.lastElementChild.textContent=message;
 }
 async function refresh(){if(refreshing)return;refreshing=true;try{const results=await Promise.allSettled([json('/api/status'),json('/api/events')]);const errors=[];if(results[0].status==='fulfilled')renderStatus(results[0].value);else errors.push('状态查询：'+results[0].reason.message);if(results[1].status==='fulfilled')renderEvents(results[1].value);else{$('event-count').textContent='不可用';errors.push('告警查询：'+results[1].reason.message);}if(errors.length)banner(errors);}finally{refreshing=false;}}
-async function animate(action){
- if(activeAnimation||matchMedia('(prefers-reduced-motion: reduce)').matches)return;activeAnimation=true;
- const paths=action==='exercise'?['operator-network','network-ecs']:['ecs-hss','hss-alerts'];
- const dot=$('flow-dot');dot.setAttribute('visibility','visible');
- try{for(const name of paths){const p=$('edge-'+name);if(!p)continue;await new Promise(resolve=>{const begin=performance.now(),length=p.getTotalLength();function tick(t){const f=Math.min(1,(t-begin)/550),pos=p.getPointAtLength(f*length);dot.setAttribute('cx',pos.x);dot.setAttribute('cy',pos.y);if(f<1)requestAnimationFrame(tick);else resolve();}requestAnimationFrame(tick);});const dest=name.split('-').at(-1),n=$('node-'+dest);n?.classList.add('active');setTimeout(()=>n?.classList.remove('active'),600);}}finally{dot.setAttribute('visibility','hidden');activeAnimation=false;}
-}
+function selectScenario(id){const spec=scenarios.find(s=>s.id===id);if(!spec)return;selectedScenario=id;$('scenario-select').value=id;$('scenario-title').textContent=spec.name;$('scenario-description').textContent=spec.description;$('scenario-policy').textContent='观察项：'+spec.expected+'。策略条件：'+spec.policy;$('scenario-source').href=spec.source;document.querySelectorAll('.scenario-card').forEach(e=>{const selected=e.dataset.scenario===id;e.classList.toggle('selected',selected);e.setAttribute('aria-pressed',selected);});}
+async function loadScenarios(){try{scenarios=(await json('/api/scenarios')).scenarios;$('scenario-select').replaceChildren();$('scenario-grid').replaceChildren();for(const [i,s]of scenarios.entries()){const option=element('option',s.name);option.value=s.id;$('scenario-select').append(option);const card=element('button',undefined,'scenario-card');card.dataset.scenario=s.id;card.setAttribute('aria-pressed','false');card.append(element('span',String(i+1).padStart(2,'0')+' / '+s.phase,'scenario-number'),element('strong',s.name),element('p',s.description),element('small',s.tools.length?'依赖：'+s.tools.join(' / '):'无需额外工具'));card.onclick=()=>selectScenario(s.id);$('scenario-grid').append(card);}selectScenario(selectedScenario);if(current)renderStatus(current);}catch(e){toast('场景加载失败：'+e.message);}}
+$('scenario-select').addEventListener('change',e=>selectScenario(e.target.value));
 async function execute(action){
  const data={id:action};
+ if(action==='exercise')data.scenario_id=selectedScenario;
  if(action==='cleanup'){const value=prompt(`将关闭 HSS 并释放本次创建的 ECS、系统盘、EIP 和网络。输入 Demo ID 确认：\n${current.demo_id}`);if(value!==current.demo_id){if(value!==null)toast('Demo ID 不匹配，未执行清理');return;}data.confirmation=value;}
  document.querySelectorAll('button.action').forEach(b=>b.disabled=true);
- try{await json('/api/execute',{method:'POST',headers:{'Content-Type':'application/json','X-Demo-Token':token},body:JSON.stringify(data)});toast('任务已提交，执行结果会显示在“后端执行记录”中');if(action==='exercise')animate(action);await refresh();}catch(e){toast(e.message);await refresh();}
+ try{await json('/api/execute',{method:'POST',headers:{'Content-Type':'application/json','X-Demo-Token':token},body:JSON.stringify(data)});toast('任务已提交，执行结果会显示在“后端执行记录”中');if(action==='exercise'){chain.begin(scenarios.find(s=>s.id===data.scenario_id));$('architecture').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});}await refresh();}catch(e){toast(e.message);await refresh();}
 }
 document.querySelectorAll('button.action').forEach(b=>b.addEventListener('click',()=>execute(b.dataset.action)));
 $('refresh').addEventListener('click',()=>{refresh();toast('正在查询云端状态');});
 for(const key of ['alerts','jobs'])$('tab-'+key).addEventListener('click',()=>{for(const k of ['alerts','jobs']){const chosen=k===key;$('tab-'+k).classList.toggle('active',chosen);$('tab-'+k).setAttribute('aria-selected',chosen);$(k==='alerts'?'alert-feed':'job-feed').hidden=!chosen;}});
-refresh();setInterval(refresh,5000);
+loadScenarios();refresh();setInterval(refresh,5000);

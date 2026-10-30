@@ -37,6 +37,18 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.post({'id':['provision']}).status_code,400)
         self.assertEqual(self.post(['provision']).status_code,400)
 
+    def test_scenario_catalog_and_rejected_client_commands(self):
+        response=self.client.get('/api/scenarios',base_url=self.base)
+        self.assertEqual(len(response.get_json()['scenarios']),10)
+        self.assertEqual(self.post({'id':'exercise','scenario_id':'arbitrary-shell'}).status_code,400)
+        self.assertEqual(self.post({'id':'exercise','scenario_id':['suid']}).status_code,400)
+        self.cloud.exercise.assert_not_called()
+
+    def test_animation_dom_contract(self):
+        html=self.client.get('/',base_url=self.base).get_data(as_text=True)
+        for ident in ['arch','flow-dot','flow-halo','chain-state','chain-speed','chain-pause','chain-replay','scenario-select']:
+            self.assertIn('id="'+ident+'"',html)
+
     def test_cleanup_requires_exact_owned_demo_id(self):
         self.assertEqual(self.post({'id':'cleanup','confirmation':'wrong'}).status_code,400)
         self.cloud.cleanup.assert_not_called()

@@ -11,7 +11,7 @@
 
 ## 完整 Demo
 
-- [HSS 最佳实践实验室（前端 + 后端）](demos/hss-best-practice/)：北京四真实 ECS、Agent 安装、企业版防护、受控文件提权演练、实际 HSS 告警与限定资源清理。
+- [HSS 最佳实践实验室（前端 + 后端）](demos/hss-best-practice/)：北京四真实 ECS、Agent 安装、企业版防护、十种受控场景、动态攻击与检测链路、实际 HSS 告警与限定资源清理。
 
 ## 架构图工具使用
 

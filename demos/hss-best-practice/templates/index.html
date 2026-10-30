@@ -5,7 +5,7 @@
   <meta name="demo-token" content="{{ csrf }}">
   <title>HSS 主机安全 · 最佳实践实验室</title>
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js" defer></script>
+  <script src="/static/attack-chain.js" defer></script><script src="/static/app.js" defer></script>
 </head>
 <body>
 <aside class="sidebar">
@@ -24,7 +24,10 @@
     <article class="metric"><span>企业版防护</span><strong id="protect-status">—</strong><small id="protection-version">尚未查询</small><b class="metric-num">03</b></article>
     <article class="metric"><span>真实安全事件</span><strong id="event-count">—</strong><small id="event-hint">等待 HSS 查询</small><b class="metric-num">04</b></article>
   </section>
-  <section class="panel architecture" id="architecture"><div class="panel-head"><div><div class="eyebrow">01 / ARCHITECTURE</div><h2>主机侧防护与云端检测协同</h2></div><div class="legend"><span class="line red"></span> 演练路径 <span class="line dashed"></span> 管理与遥测</div></div><div class="diagram">{{ architecture | safe }}</div><div class="arch-foot"><span>官方服务图标 · 独立路由走廊</span><span>CTS 为可选目标，本 Demo 不自动开通</span></div></section>
+  <section class="panel architecture" id="architecture"><div class="panel-head"><div><div class="eyebrow">01 / LIVE ATTACK CHAIN</div><h2>主机侧防护与云端检测协同</h2></div><div class="legend"><span class="line red"></span> 演练路径 <span class="line dashed"></span> 管理与遥测</div></div>
+    <div class="chain-toolbar"><label for="scenario-select">演练场景</label><select id="scenario-select" aria-label="选择攻击演练场景"><option>加载场景…</option></select><button class="action primary" data-action="exercise">▷ 开始选定场景</button><span class="toolbar-gap"></span><label for="chain-speed">动画速度</label><select id="chain-speed"><option value="0.65">慢速</option><option value="1" selected>标准</option><option value="2">快速</option></select><button id="chain-pause" class="secondary">暂停动画</button><button id="chain-replay" class="secondary">重播链路</button></div>
+    <div class="chain-progress" aria-live="polite"><div class="chain-state" id="chain-state">选择场景，查看演练指令与检测链路</div><div class="chain-steps"><span class="chain-step">01 指令下发</span><span class="chain-step">02 主机执行</span><span class="chain-step">03 等待检测</span><span class="chain-step">04 真实告警</span></div><small id="chain-motion-note"></small></div>
+    <div class="diagram">{{ architecture | safe }}</div><div class="arch-foot"><span>红色表示授权演练指令传递，不表示已绕过安全组</span><span>只有真实匹配告警才播放绿色检测链路</span></div></section>
   <section id="workflow" class="panel workflow"><div class="panel-head"><div><div class="eyebrow">02 / DEPLOYMENT</div><h2>四步接入，状态可追溯</h2></div><span id="busy-label" class="muted">每次仅执行一个操作</span></div>
     <div class="steps">
       <article class="step" data-stage="preflight"><div class="step-head"><span class="step-index">01</span><span class="stage-state">未校验</span></div><h3>账户与环境预检</h3><p>校验 IAM 项目、可用区、HSS 权限和主机规格。</p><button class="action secondary" data-action="preflight">执行预检</button></article>
@@ -34,11 +37,12 @@
     </div>
     <div class="resource-bar"><div><span>Demo ID</span><code id="demo-id">—</code></div><div><span>公网地址</span><code id="public-ip">—</code></div><div><span>SSH 来源</span><code id="ssh-cidr">—</code></div><div><span>部署规格</span><code id="flavor">—</code></div></div>
   </section>
+  <section class="panel" id="scenario-library"><div class="panel-head"><div><div class="eyebrow">03 / SCENARIO LIBRARY</div><h2>十种 HSS 受控演练场景</h2></div><button class="action secondary" data-action="prepare_scenarios">准备工具依赖</button></div><p class="scenario-intro">按官方能力与最佳实践映射；具体规则、版本和扫描范围会影响实际检出。工具类场景只操作回环地址。</p><div class="scenario-grid" id="scenario-grid"></div></section>
   <section class="two-col" id="exercises">
     <article class="panel exercise"><div class="panel-head"><div><div class="eyebrow">03 / CONTROLLED EXERCISE</div><h2>用一次受控行为，验证防护链路</h2></div><span class="tag">专用主机</span></div>
-      <div class="exercise-body"><span class="scenario-icon">⌁</span><div><h3>文件提权检测</h3><p>创建只会立即退出的 <code>true</code> 测试副本，设置 SUID 属性。不投放恶意载荷、不建立外部回连。</p></div></div>
+      <div class="exercise-body"><span class="scenario-icon">⌁</span><div><h3 id="scenario-title">文件提权检测</h3><p id="scenario-description">加载场景说明…</p><p id="scenario-policy"></p><a id="scenario-source" class="source-link" target="_blank" rel="noopener noreferrer">查看官方参考 ↗</a></div></div>
       <div class="detection" id="detection-status"><span class="status-dot"></span><span>先确认主机与 Agent 均已就绪</span></div>
-      <div class="exercise-actions"><button class="action primary" data-action="exercise">▷ 开始受控演练</button><button class="action secondary" data-action="cleanup_artifacts">清理演练文件</button><button class="action secondary" data-action="acknowledge">标记演练告警已处理</button></div>
+      <div class="exercise-actions"><button class="action primary" data-action="exercise">▷ 开始受控演练</button><button class="action secondary" data-action="cleanup_artifacts">清理演练产物</button><button class="action secondary" data-action="acknowledge">标记演练告警已处理</button></div>
       <p class="helper">执行成功 ≠ 已检出。告警出现时间取决于 HSS 策略和上报，页面每 5 秒查询实际结果。</p>
     </article>
     <article class="panel"><div class="panel-head"><div><div class="eyebrow">04 / RISK REVIEW</div><h2>风险复核</h2></div><button class="action text-button" data-action="risks">查询风险 ↗</button></div><div id="risk-summary" class="risk-empty"><span>⊞</span><strong>把漏洞和基线一起纳入复核</strong><p>读取 HSS 当前主机报告；未上报、无权限和“无风险”会分别展示。</p></div><div class="risk-notes"><span>最小权限访问</span><span>专用网络隔离</span><span>可追溯执行记录</span></div></article>

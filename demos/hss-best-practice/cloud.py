@@ -36,6 +36,7 @@ SKILL = Path(__file__).resolve().parents[2] / 'skills/huawei-cloud-bestpractice-
 sys.path.insert(0, str(SKILL))
 from lib.common import ecs_client, hss_client  # noqa: E402
 from lib.provision import gen_password  # noqa: E402
+from scenarios import get_scenario, command_for, match_events, CLEANUP_COMMAND
 
 REGION = 'cn-north-4'
 DEFAULT_RUNTIME = Path.home() / '.local/state/hss-best-practice'
@@ -341,26 +342,47 @@ class Cloud:
                 result['errors'].append(key + ': ' + error_message(exc))
         return result
 
-    def exercise(self):
+    def prepare_scenarios(self):
+        output=self.ssh('export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq nmap tcpdump strace netcat-openbsd',timeout=360)
+        self.record('演练依赖已准备','仅在专用 ECS 安装 nmap / tcpdump / strace / netcat-openbsd')
+        self.state['checks']['scenario_tools']=True
+        self._save()
+        return {'output':output}
+
+    def exercise(self,scenario_id='suid'):
+        spec=get_scenario(scenario_id)
         host = self.hss_host()
-        if not host or host.get('protect_status') != 'opened':
-            raise ValueError('HSS 防护未开启，暂不能开始演练')
-        # The binary exits immediately; there is no shell, external callback, or persistence.
+        if not host or host.get('protect_status') != 'opened' or host.get('agent_status') != 'online':
+            raise ValueError('请先确认 Agent 在线且 HSS 防护已开启')
+        baseline=[e['event_id'] for e in self.events()['events'] if e.get('event_id')]
         token = uuid.uuid4().hex[:10]
-        command = f'install -m 0755 /usr/bin/true /usr/bin/hss_demo_{token} && chmod u+s /usr/bin/hss_demo_{token} && stat -c "%n %a" /usr/bin/hss_demo_{token}'
         started = int(time.time()*1000)
-        output = self.ssh(command)
-        self.state['last_exercise'] = {'started_at': started, 'marker': token, 'status': 'awaiting_detection'}
+        run={'started_at':started,'marker':token,'scenario_id':scenario_id,'scenario_name':spec['name'],
+             'status':'executing','baseline_event_ids':baseline}
+        self.state['last_exercise']=run
+        self.state.setdefault('exercise_runs',[]).append(run)
+        self.state['exercise_runs']=self.state['exercise_runs'][-30:]
         self.state['checks']['artifacts_clean'] = False
         self._save()
-        self.record('文件提权受控演练已执行', '已创建一次性 true 测试副本；等待真实 HSS 告警，不预设检出结果')
-        return {'output': output, 'started_at': started, 'detection': 'awaiting_detection'}
+        try:
+            output=self.ssh(command_for(scenario_id,token),timeout=30)
+            result=json.loads(output.strip().splitlines()[-1])
+            run['execution_exit_code']=result.get('exit_code',0)
+            run['status']='awaiting_detection' if run['execution_exit_code']==0 else 'execution_error'
+            self.record(spec['name']+'执行结束','真实执行退出码 '+str(run['execution_exit_code'])+'；告警须由 HSS 确认')
+            self._save()
+            return {'output':result.get('output',''),'started_at':started,'scenario_id':scenario_id,
+                    'exit_code':run['execution_exit_code'],'detection':run['status']}
+        except Exception:
+            run['status']='execution_error'
+            self._save()
+            raise
 
     def cleanup_artifacts(self):
-        output = self.ssh("find /usr/bin -maxdepth 1 -type f -name 'hss_demo_*' -exec chmod u-s {} \\; -delete; echo 'Demo test artifacts removed'")
+        output = self.ssh(CLEANUP_COMMAND)
         self.state['checks']['artifacts_clean'] = True
         self._save()
-        self.record('演练文件已清理', '只清理专用主机上的 hss_demo_* 文件')
+        self.record('演练产物已清理', '仅清理 Demo 标识的样本、SUID/SGID 文件、测试账号和 cron 项')
         return {'output': output}
 
     def acknowledge(self):
@@ -370,17 +392,15 @@ class Cloud:
         if not started:
             raise ValueError('本次 Demo 尚未执行演练')
         # Query is restricted to our recorded host; never accept event IDs from the browser.
-        candidates = [e for e in self.events()['events'] if e.get('event_class_id') == 'fileprotect_0001'
-                      and int(e.get('occur_time') or 0) >= started]
+        candidates = match_events(self.state['last_exercise'],self.events()['events'])
         if not candidates:
-            raise ValueError('尚未查询到本次演练时间窗口的文件提权事件')
-        event = candidates[0]
+            raise ValueError('尚未查询到与本次场景类型、时间窗口和新事件 ID 匹配的告警')
         self.hss.change_event(ChangeEventRequest(region=REGION,body=ChangeEventRequestInfo(
             operate_type='mark_as_handled', handler='Controlled demo artifact removed - '+self.state['demo_id'],
             operate_event_list=[OperateEventRequestInfo(event_class_id=event['event_class_id'],event_id=event['event_id'],
-                event_type=event['event_type'],occur_time=event['occur_time'],operate_detail_list=[])])))
-        self.record('告警手动处置请求已提交','只标记本次文件提权演练事件；实际状态以 HSS 返回为准')
-        return {'event_id': event['event_id'], 'requested_operation': 'mark_as_handled'}
+                event_type=event['event_type'],occur_time=event['occur_time'],operate_detail_list=[]) for event in candidates])))
+        self.record('告警手动处置请求已提交','只标记本次场景匹配的演练事件；实际状态以 HSS 返回为准')
+        return {'event_ids':[event['event_id'] for event in candidates],'requested_operation':'mark_as_handled'}
 
     def cleanup(self):
         """Only IDs created and persisted by this demo may be removed."""
