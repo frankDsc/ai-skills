@@ -15,13 +15,13 @@ function banner(errors){$('error-banner').hidden=!errors.length;$('error-banner'
 function renderStatus(d){
  current=d;
  $('connection').textContent=d.connected?'● 已连接真实云账户':'云账户未连接';
- metric('ecs-status',d.ecs_status,d.ecs_status==='ACTIVE');
- metric('agent-status',d.host.agent_status,d.host.agent_status==='online');
- metric('protect-status',d.host.protect_status,d.host.protect_status==='opened');
+ metric('ecs-status',d.resources_released?'已销毁':d.ecs_status,d.ecs_status==='ACTIVE');
+ metric('agent-status',d.resources_released?'已卸载':d.host.agent_status,d.host.agent_status==='online');
+ metric('protect-status',d.resources_released?'已关闭':d.host.protect_status,d.host.protect_status==='opened');
  $('protection-version').textContent=d.host.version||'未上报防护版本';
- $('host-name').textContent=d.resources.server_id?d.demo_id:'尚未创建专用测试主机';
- $('demo-id').textContent=d.demo_id;$('public-ip').textContent=d.resources.public_ip||'未分配';
- $('ssh-cidr').textContent=d.plan?.ssh_cidr||'预检后确定';$('flavor').textContent=d.plan?.flavor||'预检后确定';
+ $('host-name').textContent=d.resources.server_id?d.demo_id:(d.resources_released?'资源已释放':'尚未创建专用测试主机');
+ $('demo-id').textContent=d.resources_released?'—':d.demo_id;$('public-ip').textContent=d.resources.public_ip||'未分配';
+ $('ssh-cidr').textContent=d.resources_released?'—':(d.plan?.ssh_cidr||'预检后确定');$('flavor').textContent=d.resources_released?'—':(d.plan?.flavor||'预检后确定');
  $('busy-label').textContent=d.busy?'● 操作执行中，请稍候':'每次仅执行一个操作';
  const checks={...d.checks,install:d.host.agent_status==='online',protect:d.host.protect_status==='opened'};
  document.querySelectorAll('.step').forEach(el=>{const done=!!checks[el.dataset.stage];el.classList.toggle('done',done);el.querySelector('.stage-state').textContent=done?'已完成':'待执行';});
@@ -77,9 +77,9 @@ $('scenario-select').addEventListener('change',e=>selectScenario(e.target.value)
 async function execute(action){
  const data={id:action};
  if(action==='exercise')data.scenario_id=selectedScenario;
- if(action==='cleanup'){const value=prompt(`将关闭 HSS 并释放本次创建的 ECS、系统盘、EIP 和网络。输入 Demo ID 确认：\n${current.demo_id}`);if(value!==current.demo_id){if(value!==null)toast('Demo ID 不匹配，未执行清理');return;}data.confirmation=value;}
+ if(action==='cleanup'){if(!confirm(`确定销毁 Demo「${current.demo_id}」的云资源？将关闭 HSS 并删除 ECS、系统盘、EIP、安全组、子网和 VPC。此操作不可撤销。`))return;const value=prompt(`第二次确认：输入完整 Demo ID「${current.demo_id}」以释放资源。`);if(value!==current.demo_id){if(value!==null)toast('Demo ID 不匹配，未执行清理');return;}data.confirmation=value;}
  document.querySelectorAll('button.action').forEach(b=>b.disabled=true);
- try{await json('/api/execute',{method:'POST',headers:{'Content-Type':'application/json','X-Demo-Token':token},body:JSON.stringify(data)});toast('任务已提交，执行结果会显示在“后端执行记录”中');if(action==='exercise'){chain.begin(scenarios.find(s=>s.id===data.scenario_id));$('architecture').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});}await refresh();}catch(e){toast(e.message);await refresh();}
+ try{const submitted=await json('/api/execute',{method:'POST',headers:{'Content-Type':'application/json','X-Demo-Token':token},body:JSON.stringify(data)});toast(action==='cleanup'?'正在销毁云资源，状态会在完成后更新':'任务已提交，执行结果会显示在“后端执行记录”中');if(action==='exercise'){chain.begin(scenarios.find(s=>s.id===data.scenario_id));$('architecture').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});}await refresh();if(action==='cleanup'){for(let i=0;i<90;i++){await new Promise(r=>setTimeout(r,2000));const status=await json('/api/status');renderStatus(status);const job=status.jobs.find(j=>j.id===submitted.job_id);if(job&&job.status!=='running'){toast(job.status==='success'?'Demo 云资源已释放，状态已更新':`资源释放未完成：${job.error||'请查看后端执行记录'}`);break;}}}}catch(e){toast(e.message);await refresh();}
 }
 document.querySelectorAll('button.action').forEach(b=>b.addEventListener('click',()=>execute(b.dataset.action)));
 $('refresh').addEventListener('click',()=>{refresh();toast('正在查询云端状态');});

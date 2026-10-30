@@ -66,8 +66,9 @@ class Cloud:
         self.path = self.runtime / 'state.json'
         self.state = json.loads(self.path.read_text()) if self.path.exists() else {
             'demo_id': 'hss-bp-' + time.strftime('%Y%m%d') + '-' + uuid.uuid4().hex[:6],
-            'region': REGION, 'resources': {}, 'checks': {}, 'journal': [],
+            'region': REGION, 'resources': {}, 'checks': {}, 'journal': [], 'resources_released': False,
         }
+        self.state.setdefault('resources_released', False)
         if self.state['region'] != REGION:
             raise ValueError('运行时区域不匹配')
         self.cfg = {'ak': self.ak, 'sk': self.sk, 'region': REGION}
@@ -138,6 +139,7 @@ class Cloud:
                 errors.append(error_message(exc))
         return {
             'connected': bool(self.project_id), 'region': REGION, 'demo_id': self.state['demo_id'],
+            'resources_released': self.state.get('resources_released', False),
             'host': {k: (host or {}).get(k) for k in ('host_id','host_name','agent_status','protect_status','version','risk_num')},
             'ecs_status': (server or {}).get('status', '未创建'),
             'resources': {k: v for k, v in res.items() if k != 'password'},
@@ -437,6 +439,7 @@ class Cloud:
         self.state['resources'] = {}
         self.state['checks'] = {}
         self.state.pop('plan',None)
+        self.state['resources_released'] = True
         self._save()
         self.record('Demo 资源清理完成', '已清理记录的 ECS / 系统盘 / EIP / 安全组 / 子网 / VPC')
         return {'released': True}
