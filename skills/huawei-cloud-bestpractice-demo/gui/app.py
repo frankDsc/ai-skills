@@ -37,6 +37,13 @@ def index():
     return html
 
 
+@app.after_request
+def _no_cache(resp):
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
+
+
 @app.route("/api/status")
 def api_status():
     return jsonify(BACKEND.status())
@@ -83,6 +90,8 @@ header .sub{font-size:12px;color:#ffd9db;margin-top:3px;}
 .stage{background:#fff;border:1px solid var(--border);border-radius:14px;padding:8px 14px 4px;margin-bottom:14px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.04);}
 svg{width:100%;height:auto;display:block;}
 .node{transition:all .3s;}
+.shake{animation:shake .5s;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 .shake{animation:shake .5s;}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
 .cols{display:grid;grid-template-columns:420px 1fr;gap:16px;}
@@ -148,9 +157,11 @@ async function loadStatus(){
   }catch(e){}
 }
 
+let ACTIONS=[];
 async function loadActions(){
   try{
     const d=await getJSON('/api/actions');
+    ACTIONS = d.actions || [];
     const box=$('actions'); box.innerHTML='';
     for(const a of (d.actions||[])){
       const el=document.createElement('div'); el.className='cmd-row';
@@ -177,9 +188,18 @@ function animateFlow(actionId){
   })(performance.now());
 }
 
+function shakeNodes(ids){
+  (ids||[]).forEach(function(nid){
+    const el=document.getElementById('node-'+nid);
+    if(el){el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),600);}
+  });
+}
+
 async function fire(btn){
   const id=btn.dataset.id;
   btn.disabled=true; btn.textContent='执行中…';
+  const action=ACTIONS.find(a=>a.id===id);
+  if(action) shakeNodes(action.flow);
   animateFlow(id);
   try{ await fetch('/api/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}); }catch(e){}
   toast('已触发，处理中…');

@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""通用架构图生成器：从 manifest 生成带华为云官方图标（PNG）的 SVG。
+"""通用架构图生成器（按 architecture-diagram-tool 布局规则）。
 
-支持：
-- 普通节点（图标 + 标题 + 副标题）
-- 嵌套分组：group 的 children 可以是节点或另一个 group（如 VPC > HSS > ECS）
-- 连线：实线红=业务/攻击流，虚线灰=控制/审计流；dir=up/down 走垂直
-- 每个 action 生成隐藏 flow 路径，供前端动画
+- 图标：**内联 SVG 路径**（不用 <image>，避免 WebView 兼容问题）
+- 嵌套分组：VPC > HSS > ECS
+- 正交连线：实线红=业务/攻击，虚线灰=控制/审计；dir=up/down
 """
-import base64
 import os
+import re
 
 NODE_W = 190
 NODE_H = 150
@@ -16,24 +14,25 @@ GAPX = 70
 GAPY = 60
 GRID_W = NODE_W + GAPX
 GRID_H = NODE_H + GAPY
-MX = 60
-MY = 50
+MX = 56
+MY = 44
 GROUP_TITLE_H = 46
 
 
-def _data_uri(icons_dir, icon):
+def _icon_group(icons_dir, icon, x, y, size):
+    """把一个 SVG 图标内联为 <g>（重命名 clipPath id 防冲突），按 size 缩放。"""
     if not icon:
         return ""
-    # PNG 优先（所有浏览器/WebView 都能渲染）
-    png = os.path.join(os.path.dirname(icons_dir), "icons_png", icon + ".png")
-    if os.path.exists(png):
-        with open(png, "rb") as f:
-            return "data:image/png;base64," + base64.b64encode(f.read()).decode()
     p = os.path.join(icons_dir, icon + ".svg")
     if not os.path.exists(p):
         return ""
-    with open(p, "rb") as f:
-        return "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode()
+    raw = open(p, encoding="utf-8").read()
+    m = re.search(r"<svg[^>]*>(.*)</svg>", raw, re.S)
+    inner = m.group(1) if m else ""
+    uid = "ic-" + re.sub(r"[^A-Za-z0-9_-]", "_", icon)
+    inner = inner.replace('id="a"', f'id="{uid}"').replace("url(#a)", f"url(#{uid})")
+    scale = size / 72.0
+    return f'<g transform="translate({x:.1f},{y:.1f}) scale({scale:.5f})">{inner}</g>'
 
 
 def _layout(nodes):
@@ -83,27 +82,21 @@ def _place(n, x, y, w, h, by_id, pos):
 
 def _route(s, t, direction=None):
     if direction == "up":
-        scx = s["x"] + s["w"] / 2
-        tcx = t["x"] + t["w"] / 2
-        stop = s["y"]
-        tbot = t["y"] + t["h"]
+        scx, tcx = s["x"] + s["w"] / 2, t["x"] + t["w"] / 2
+        stop, tbot = s["y"], t["y"] + t["h"]
         if abs(scx - tcx) < 4:
             return [(scx, stop), (tcx, tbot)]
         midy = (stop + tbot) / 2
         return [(scx, stop), (scx, midy), (tcx, midy), (tcx, tbot)]
     if direction == "down":
-        scx = s["x"] + s["w"] / 2
-        tcx = t["x"] + t["w"] / 2
-        sbot = s["y"] + s["h"]
-        ttop = t["y"]
+        scx, tcx = s["x"] + s["w"] / 2, t["x"] + t["w"] / 2
+        sbot, ttop = s["y"] + s["h"], t["y"]
         if abs(scx - tcx) < 4:
             return [(scx, sbot), (tcx, ttop)]
         midy = (sbot + ttop) / 2
         return [(scx, sbot), (scx, midy), (tcx, midy), (tcx, ttop)]
-    sx = s["x"] + s["w"]
-    sy = s["y"] + s["h"] / 2
-    tx = t["x"]
-    ty = t["y"] + t["h"] / 2
+    sx, sy = s["x"] + s["w"], s["y"] + s["h"] / 2
+    tx, ty = t["x"], t["y"] + t["h"] / 2
     if abs(sy - ty) < 4:
         return [(sx, sy), (tx, ty)]
     mid = (sx + tx) / 2
@@ -119,11 +112,10 @@ def build_svg(manifest, icons_dir):
     pos = _layout(nodes)
     maxx = max(p["x"] + p["w"] for p in pos.values()) + 60
     maxy = max(p["y"] + p["h"] for p in pos.values()) + 60
-    W = max(int(maxx), 1100)
+    W = max(int(maxx), 1120)
     H = max(int(maxy), 640)
 
-    o = []
-    o.append(f'<svg viewBox="0 0 {W} {H}" id="arch" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">')
+    o = ['<svg viewBox="0 0 %d %d" id="arch" xmlns="http://www.w3.org/2000/svg">' % (W, H)]
     o.append('''<defs>
       <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse">
         <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#f6e2e2" stroke-width="1"/>
@@ -138,7 +130,7 @@ def build_svg(manifest, icons_dir):
     o.append(f'<rect width="{W}" height="{H}" fill="#ffffff"/>')
     o.append(f'<rect width="{W}" height="{H}" fill="url(#grid)" opacity="0.55"/>')
 
-    # 1) 分组框：按面积从大到小（外层先画）
+    # 1) 分组框（外层先画）
     groups = [n for n in nodes if n.get("type") == "group"]
     groups.sort(key=lambda n: pos[n["id"]]["w"] * pos[n["id"]]["h"], reverse=True)
     for n in groups:
@@ -148,11 +140,9 @@ def build_svg(manifest, icons_dir):
         o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="16" '
                  f'fill="#FDECEC" stroke="#C7000B" stroke-width="2"/>')
         icx = x + 16
-        uri = _data_uri(icons_dir, n.get("icon"))
-        if uri:
-            o.append(f'<image xlink:href="{uri}" href="{uri}" x="{icx}" y="{y + 8}" '
-                     f'width="24" height="24"/>')
-            icx += 30
+        o.append(_icon_group(icons_dir, n.get("icon"), icx, y + 10, 22))
+        if n.get("icon"):
+            icx += 28
         o.append(f'<text x="{icx}" y="{y + 26}" font-size="13" font-weight="700" '
                  f'fill="#9E0008">{n["label"]}</text>')
         if n.get("sub"):
@@ -174,19 +164,16 @@ def build_svg(manifest, icons_dir):
                  f'stroke="{stroke}" stroke-width="2.4" stroke-dasharray="{dash}" '
                  f'marker-end="url(#{marker})" opacity="{opacity}"/>')
 
-    # 3) 节点
+    # 3) 节点（图标内联）
     for n in nodes:
         if n.get("type") == "group":
             continue
         p = pos[n["id"]]
         x, y, w, h = p["x"], p["y"], p["w"], p["h"]
-        uri = _data_uri(icons_dir, n.get("icon"))
         o.append(f'<g id="node-{n["id"]}" class="node">')
         o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" '
                  f'fill="#ffffff" stroke="#C7000B" stroke-width="1.6"/>')
-        if uri:
-            o.append(f'<image xlink:href="{uri}" href="{uri}" x="{x + (w - 64) / 2}" '
-                     f'y="{y + 14}" width="64" height="64"/>')
+        o.append(_icon_group(icons_dir, n.get("icon"), x + (w - 64) / 2, y + 14, 64))
         o.append(f'<text x="{x + w / 2}" y="{y + 104}" text-anchor="middle" font-size="14" '
                  f'font-weight="600" fill="#333333">{n["label"]}</text>')
         if n.get("sub"):
@@ -194,7 +181,7 @@ def build_svg(manifest, icons_dir):
                      f'fill="#888888">{n["sub"]}</text>')
         o.append('</g>')
 
-    # 4) 每个 action 的隐藏 flow 路径
+    # 4) action flow 路径
     for a in manifest.get("actions", []):
         pts = []
         flow = a.get("flow", [])
