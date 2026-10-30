@@ -61,3 +61,9 @@
 ## 10. 费用与清理
 
 按需资源（ECS/EIP/HSS）关机/释放即停止计费；演示结束务必清理，详见 `pricing.md`。
+
+## 12. 图标统一用 PNG data URI（兼容所有 WebView）
+
+个别 WebView（macOS WKWebView / 内嵌浏览器）对 **SVG-in-SVG** 的 `<image href="data:image/svg+xml...">` 渲染不稳定——会出现「部分图标显示、部分空白」。
+修复：`lib/arch.py` 优先读 `assets/icons_png/*.png`（**PNG data URI**），并同时写 `xlink:href` + `href`。
+`scripts/rasterize_icons.py` 可批量把 `assets/icons/*.svg` 栅格化为 144×144 PNG。

@@ -12,6 +12,13 @@ NODE_H = 150
 
 
 def _data_uri(icons_dir, icon):
+    if not icon:
+        return ""
+    # 优先用 PNG（PNG data URI 在所有浏览器/WebView 都能渲染），回退 SVG
+    png = os.path.join(os.path.dirname(icons_dir), "icons_png", icon + ".png")
+    if os.path.exists(png):
+        with open(png, "rb") as f:
+            return "data:image/png;base64," + base64.b64encode(f.read()).decode()
     p = os.path.join(icons_dir, icon + ".svg")
     if not os.path.exists(p):
         return ""
@@ -55,7 +62,7 @@ def build_svg(manifest, icons_dir):
     H = max(int(maxy), 640)
 
     o = []
-    o.append(f'<svg viewBox="0 0 {W} {H}" id="arch" xmlns="http://www.w3.org/2000/svg">')
+    o.append(f'<svg viewBox="0 0 {W} {H}" id="arch" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">')
     o.append('''<defs>
       <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse">
         <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#f6e2e2" stroke-width="1"/>
@@ -93,8 +100,8 @@ def build_svg(manifest, icons_dir):
         o.append(f'<rect x="{x}" y="{y}" width="{NODE_W}" height="{NODE_H}" rx="12" '
                  f'fill="#ffffff" stroke="#C7000B" stroke-width="1.6"/>')
         if uri:
-            o.append(f'<image href="{uri}" x="{x + (NODE_W - 64) / 2}" y="{y + 14}" '
-                     f'width="64" height="64"/>')
+            o.append(f'<image xlink:href="{uri}" href="{uri}" x="{x + (NODE_W - 64) / 2}" '
+                     f'y="{y + 14}" width="64" height="64"/>')
         o.append(f'<text x="{x + NODE_W / 2}" y="{y + 104}" text-anchor="middle" '
                  f'font-size="14" font-weight="600" fill="#333333">{n["label"]}</text>')
         if n.get("sub"):
