@@ -1,7 +1,7 @@
 {
   "id": "hwcloud-hss-demo",
   "title": "华为云 HSS 主机安全 Demo",
-  "subtitle": "攻击模拟 → HSS 实时检出（ECS + 安全组 + 企业主机安全）",
+  "subtitle": "攻击者绕过 IAM → 直击 VM → HSS Agent 实时检出 → CTS 审计留痕",
   "region": "cn-north-4",
   "backend": "hss",
   "cards": [
@@ -11,24 +11,22 @@
     { "label": "安全事件", "value": "实时", "tone": "red" }
   ],
   "nodes": [
-    { "id": "attacker", "label": "攻击者", "sub": "外部威胁", "icon": "", "col": 0, "row": 1 },
+    { "id": "iam", "label": "IAM 身份认证", "sub": "攻击者绕过", "icon": "iam", "col": 1, "row": 0 },
+    { "id": "cts", "label": "CTS 云审计", "sub": "操作留痕", "icon": "cts", "col": 3, "row": 0 },
+    { "id": "attacker", "label": "攻击者", "sub": "绕过 IAM · 直击 VM", "icon": "", "col": 0, "row": 1 },
     { "id": "boundary", "label": "公网 EIP + 安全组", "sub": "SSH 白名单", "icon": "", "col": 1, "row": 1 },
-    { "id": "ecs", "label": "ECS 主机", "sub": "hss-demo-ecs", "icon": "ecs", "col": 2, "row": 1 },
-    { "id": "hss", "label": "HSS 安全中心", "sub": "企业版 · 按需", "icon": "hss", "col": 3, "row": 1 },
-    { "id": "iam", "label": "IAM", "sub": "身份认证", "icon": "iam", "col": 2, "row": 0 },
-    { "id": "cts", "label": "CTS", "sub": "云审计", "icon": "cts", "col": 3, "row": 0 }
+    { "id": "hss", "label": "HSS 主机安全", "sub": "Agent 安装在 VM 内", "type": "group", "col": 2, "row": 1, "w": 2, "h": 1, "children": ["ecs"] },
+    { "id": "ecs", "label": "ECS 主机", "sub": "hss-demo-ecs", "icon": "ecs" }
   ],
   "edges": [
     { "from": "attacker", "to": "boundary", "flow": "data" },
-    { "from": "boundary", "to": "ecs", "flow": "data" },
-    { "from": "ecs", "to": "hss", "flow": "data" },
-    { "from": "iam", "to": "ecs", "flow": "control" },
-    { "from": "cts", "to": "hss", "flow": "control" }
+    { "from": "boundary", "to": "hss", "flow": "data" },
+    { "from": "ecs", "to": "cts", "flow": "control", "dir": "up" }
   ],
   "actions": [
-    { "id": "suid", "label": "提权（SUID）", "desc": "新建系统文件并设置 SUID 位", "flow": ["attacker", "boundary", "ecs", "hss"], "event": { "name": "File Privilege Escalation", "detail": "HSS 检出文件提权", "severity": "High" } },
-    { "id": "webshell", "label": "Webshell 写入", "desc": "写入 PHP 一句话木马", "flow": ["attacker", "boundary", "ecs", "hss"], "event": { "name": "Webshell", "detail": "HSS 检出 Web Shell", "severity": "High" } },
-    { "id": "miner", "label": "挖矿木马下载", "desc": "模拟下载挖矿程序", "flow": ["attacker", "boundary", "ecs", "hss"], "event": { "name": "挖矿", "detail": "HSS 检出挖矿行为", "severity": "High" } },
-    { "id": "revshell", "label": "反弹 Shell", "desc": "反向连接尝试", "flow": ["attacker", "boundary", "ecs", "hss"], "event": { "name": "反弹Shell", "detail": "HSS 检出反弹 Shell", "severity": "High" } }
+    { "id": "suid", "label": "提权（SUID）", "desc": "新建系统文件并设置 SUID 位", "flow": ["attacker", "boundary", "ecs"], "event": { "name": "File Privilege Escalation", "detail": "HSS 检出文件提权", "severity": "High" } },
+    { "id": "webshell", "label": "Webshell 写入", "desc": "写入 PHP 一句话木马", "flow": ["attacker", "boundary", "ecs"], "event": { "name": "Webshell", "detail": "HSS 检出 Web Shell", "severity": "High" } },
+    { "id": "miner", "label": "挖矿木马下载", "desc": "模拟下载挖矿程序", "flow": ["attacker", "boundary", "ecs"], "event": { "name": "挖矿", "detail": "HSS 检出挖矿行为", "severity": "High" } },
+    { "id": "revshell", "label": "反弹 Shell", "desc": "反向连接尝试", "flow": ["attacker", "boundary", "ecs"], "event": { "name": "反弹Shell", "detail": "HSS 检出反弹 Shell", "severity": "High" } }
   ]
 }
