@@ -22,24 +22,13 @@ def validate(m):
         if k not in m:
             raise ValueError(f"manifest 缺少字段: {k}")
     ids = {n["id"] for n in m["nodes"]}
-    child_ids = set()
     for n in m["nodes"]:
-        if n.get("type") == "group":
-            for k in ("id", "label", "children"):
-                if k not in n:
-                    raise ValueError(f"group 缺少字段 {k}: {n}")
-            for cid in n["children"]:
-                if cid not in ids:
-                    raise ValueError(f"group {n['id']} 引用了不存在的子节点: {cid}")
-                child_ids.add(cid)
-            n.setdefault("sub", "")
-        else:
-            for k in ("id", "label", "icon"):
-                if k not in n:
-                    raise ValueError(f"node 缺少字段 {k}: {n}")
-            n.setdefault("col", 0)
-            n.setdefault("row", 0)
-            n.setdefault("sub", "")
+        for k in ("id", "label", "icon"):
+            if k not in n:
+                raise ValueError(f"node 缺少字段 {k}: {n}")
+        n.setdefault("col", 0)
+        n.setdefault("row", 0)
+        n.setdefault("sub", "")
     for e in m.get("edges", []):
         if e["from"] not in ids or e["to"] not in ids:
             raise ValueError(f"edge 引用了不存在的节点: {e}")

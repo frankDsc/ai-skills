@@ -12,8 +12,7 @@
 4. CTS 开启操作审计；
 5. KMS 托管密钥加密敏感数据。
 
-**架构语义**：HSS 作为「框」包住 ECS（Agent 装在 VM 内）；攻击者**绕过 IAM** 直击 VM；审计日志 `ecs → cts` 指向 CTS。
-**Demo 流程**：攻击者（绕过 IAM）→ 公网边界 → HSS[ECS] → HSS 检出 → 告警
+**Demo 流程**：攻击者 → 公网边界 → ECS（HSS Agent）→ HSS 检出 → 告警
 **图标**：`ecs` `hss` `iam` `cts`；边界用空图标通用框
 **后端**：`hss`（真实 HSS 检测）
 
