@@ -181,18 +181,15 @@ def build_svg(manifest, icons_dir):
                      f'fill="#888888">{n["sub"]}</text>')
         o.append('</g>')
 
-    # 4) action flow 路径
+    # 4) action flow 分段路径（每段独立，前端逐段动画，红点到达节点才震动）
     for a in manifest.get("actions", []):
-        pts = []
         flow = a.get("flow", [])
         for i in range(len(flow) - 1):
             s, t = pos.get(flow[i]), pos.get(flow[i + 1])
             if not s or not t:
                 continue
             seg = _route(s, t)
-            pts.extend(seg if i == 0 else seg[1:])
-        if pts:
-            o.append(f'<path id="flow-{a["id"]}" d="{_d(pts)}" fill="none" stroke="none"/>')
+            o.append(f'<path id="flow-{a["id"]}-{i}" d="{_d(seg)}" fill="none" stroke="none"/>')
 
     o.append('<circle id="flowDot" cx="0" cy="0" r="8" fill="#C7000B" opacity="0"/>')
     o.append('</svg>')

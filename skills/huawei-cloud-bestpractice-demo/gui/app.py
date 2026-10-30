@@ -172,38 +172,46 @@ async function loadActions(){
   }catch(e){}
 }
 
-function animateFlow(actionId){
-  const path=document.getElementById('flow-'+actionId);
-  const dot=document.getElementById('flowDot');
-  if(!path||!dot) return;
-  const len=path.getTotalLength();
-  const dur=Math.min(1800, 400+len*1.5);
-  const t0=performance.now();
-  dot.setAttribute('opacity','1');
-  (function step(t){
-    const p=Math.min((t-t0)/dur,1);
-    const pt=path.getPointAtLength(p*len);
-    dot.setAttribute('cx',pt.x); dot.setAttribute('cy',pt.y);
-    if(p<1) requestAnimationFrame(step); else {dot.setAttribute('opacity','0');}
-  })(performance.now());
+function animateAlong(path, dot, dur){
+  return new Promise(function(res){
+    const len=path.getTotalLength();
+    const t0=performance.now();
+    (function step(t){
+      const p=Math.min((t-t0)/dur,1);
+      const pt=path.getPointAtLength(p*len);
+      dot.setAttribute('cx',pt.x); dot.setAttribute('cy',pt.y);
+      if(p<1) requestAnimationFrame(step); else res();
+    })(t0);
+  });
 }
 
-function shakeNodes(ids){
-  (ids||[]).forEach(function(nid){
-    const el=document.getElementById('node-'+nid);
-    if(el){el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),600);}
-  });
+function shakeNode(id){
+  const el=document.getElementById('node-'+id);
+  if(el){el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),520);}
+}
+
+async function animateFlow(action){
+  const flow=action.flow||[];
+  const dot=document.getElementById('flowDot');
+  if(!dot||!flow.length) return;
+  dot.setAttribute('opacity','1');
+  shakeNode(flow[0]);
+  for(let i=0;i<flow.length-1;i++){
+    const path=document.getElementById('flow-'+action.id+'-'+i);
+    if(path){ await animateAlong(path, dot, 480); }
+    shakeNode(flow[i+1]);
+  }
+  setTimeout(function(){dot.setAttribute('opacity','0');}, 350);
 }
 
 async function fire(btn){
   const id=btn.dataset.id;
   btn.disabled=true; btn.textContent='执行中…';
   const action=ACTIONS.find(a=>a.id===id);
-  if(action) shakeNodes(action.flow);
-  animateFlow(id);
+  if(action) animateFlow(action);
   try{ await fetch('/api/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}); }catch(e){}
   toast('已触发，处理中…');
-  setTimeout(()=>{btn.disabled=false;btn.textContent='触发';loadEvents(true);},1500);
+  setTimeout(()=>{btn.disabled=false;btn.textContent='触发';loadEvents(true);},2200);
 }
 
 let lastSig='';

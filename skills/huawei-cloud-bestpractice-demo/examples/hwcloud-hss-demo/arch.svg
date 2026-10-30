@@ -128,9 +128,13 @@
 <text x="801.0" y="497.0" text-anchor="middle" font-size="14" font-weight="600" fill="#333333">ECS 主机</text>
 <text x="801.0" y="519.0" text-anchor="middle" font-size="11" fill="#888888">hss-demo-ecs</text>
 </g>
-<path id="flow-suid" d="M 246.0 329.0 L 316.0 329.0 L 606.0 329.0 L 606.0 468.0 L 706.0 468.0" fill="none" stroke="none"/>
-<path id="flow-webshell" d="M 246.0 329.0 L 316.0 329.0 L 606.0 329.0 L 606.0 468.0 L 706.0 468.0" fill="none" stroke="none"/>
-<path id="flow-miner" d="M 246.0 329.0 L 316.0 329.0 L 606.0 329.0 L 606.0 468.0 L 706.0 468.0" fill="none" stroke="none"/>
-<path id="flow-revshell" d="M 246.0 329.0 L 316.0 329.0 L 606.0 329.0 L 606.0 468.0 L 706.0 468.0" fill="none" stroke="none"/>
+<path id="flow-suid-0" d="M 246.0 329.0 L 316.0 329.0" fill="none" stroke="none"/>
+<path id="flow-suid-1" d="M 506.0 329.0 L 606.0 329.0 L 606.0 468.0 L 706.0 468.0" fill="none" stroke="none"/>
+<path id="flow-webshell-0" d="M 246.0 329.0 L 316.0 329.0" fill="none" stroke="none"/>
+<path id="flow-webshell-1" d="M 506.0 329.0 L 606.0 329.0 L 606.0 468.0 L 706.0 468.0" fill="none" stroke="none"/>
+<path id="flow-miner-0" d="M 246.0 329.0 L 316.0 329.0" fill="none" stroke="none"/>
+<path id="flow-miner-1" d="M 506.0 329.0 L 606.0 329.0 L 606.0 468.0 L 706.0 468.0" fill="none" stroke="none"/>
+<path id="flow-revshell-0" d="M 246.0 329.0 L 316.0 329.0" fill="none" stroke="none"/>
+<path id="flow-revshell-1" d="M 506.0 329.0 L 606.0 329.0 L 606.0 468.0 L 706.0 468.0" fill="none" stroke="none"/>
 <circle id="flowDot" cx="0" cy="0" r="8" fill="#C7000B" opacity="0"/>
 </svg>
