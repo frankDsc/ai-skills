@@ -417,7 +417,9 @@ class Cloud:
                 self.record('关闭按需 HSS 防护', res['server_id'])
             self.ecs.delete_servers(DeleteServersRequest(body=DeleteServersRequestBody(delete_publicip=False, delete_volume=True, servers=[ServerId(id=res['server_id'])])))
             for _ in range(60):
-                try: self.ecs.show_server(ShowServerRequest(server_id=res['server_id']))
+                try:
+                    deleted_server = self.ecs.show_server(ShowServerRequest(server_id=res['server_id'])).server
+                    if deleted_server.status == 'DELETED': break
                 except ClientRequestException as exc:
                     if exc.status_code == 404: break
                     raise
