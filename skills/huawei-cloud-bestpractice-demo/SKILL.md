@@ -15,7 +15,7 @@ description: 把任意华为云「最佳实践」做成可对客户演示的 Dem
 |---|---|
 | 任意领域 | 安全 / 大数据 / 数据库 / AI / 容器 / 网络 / 存储 / 迁移…… |
 | 底层资源 | VPC、安全组、ECS、EIP、OBS、RDS 等（按需，可释放） |
-| 架构图 | 从 manifest 生成，使用**华为云官方图标**（`assets/icons/`，24 个） |
+| 架构图 | 从 manifest 生成，使用**华为云官方图标**（`assets/icons/`，27 个） |
 | 动态 GUI | 卡片 + 架构图 + 可触发动作 + 架构图动画 + 事件流 |
 | 后端 | `ssh`（SSH 到**真实 ECS** 执行命令，默认）/ `hss`（SSH + 真实 HSS 检测） |
 
@@ -58,6 +58,36 @@ description: 把任意华为云「最佳实践」做成可对客户演示的 Dem
 | `actions` | ✅ | `id` / `label` / `desc` / `flow`(节点 id 序列) / `cmd`(**在真实 ECS 上执行的命令**) / `event` |
 
 > 布局用 `(col,row)` 网格，节点自动排布；连线自动正交路由。
+
+### 高级字段（嵌套分组 / 垂直连线）
+
+| 字段 | 说明 |
+|---|---|
+| `node.type: "group"` + `node.children: [...]` | **分组框**：children 可以是普通节点，也可以是另一个 group，实现嵌套（如 `VPC > HSS > ECS`） |
+| `node.w` / `node.h` | 分组框占几个网格列 / 行 |
+| `node.w_px` / `node.h_px` | 分组框的像素尺寸（嵌在父框内时精确控制大小） |
+| `node.icon` | 分组框标题前也可显示图标 |
+| `edge.dir: "up" / "down"` | 连线走垂直方向（如审计流 `VPC → CTS` 向上） |
+
+### 图标方案（重要）
+
+- 图标**内联成 SVG `<g>` 路径**（`lib/arch.py` 的 `_icon_group` 会重命名 clipPath id 防冲突），**不要用 `<image>`**——部分 WebView 对 SVG-in-SVG 的 `<image>` 渲染不稳定，会出现「部分图标空白」。
+- 新增图标：把 `.svg` 放进 `assets/icons/`；`scripts/rasterize_icons.py` 可批量转 PNG（备用）。
+- 内置 27 个图标，含自绘的 `attacker`（官方库无攻击者图标）。
+
+### 动态动画
+
+- 红点沿 action 的 `flow` **逐段**流动；
+- **红点到达哪个节点，才震动哪个节点**（不是同时震动）；
+- 事件流每 5 秒刷新；`no-store` 禁缓存。
+
+### 架构语义约定（重要）
+
+1. **防护类服务用「框」包住被保护资源**：HSS 应是包住 ECS 的 `group`，表示 Agent 装在 VM 内。
+2. **嵌套边界**：VPC 在外、HSS 在内（`VPC > HSS > ECS`）。
+3. **攻击者绕过 IAM**：攻击路径不经过 IAM，IAM 在控制面，用副标题/标签注明。
+4. **审计流指向 CTS**：`资源 → CTS`，箭头朝 CTS。
+5. 业务/攻击流实线红，控制/审计流虚线灰；虚线走独立走廊，不压方框。
 
 ## 工作流（Agent 执行步骤）
 

@@ -62,8 +62,14 @@
 
 按需资源（ECS/EIP/HSS）关机/释放即停止计费；演示结束务必清理，详见 `pricing.md`。
 
-## 12. 图标统一用 PNG data URI（兼容所有 WebView）
+## 12. 图标必须内联成 SVG `<g>`，不要用 `<image>`
 
-个别 WebView（macOS WKWebView / 内嵌浏览器）对 **SVG-in-SVG** 的 `<image href="data:image/svg+xml...">` 渲染不稳定——会出现「部分图标显示、部分空白」。
-修复：`lib/arch.py` 优先读 `assets/icons_png/*.png`（**PNG data URI**），并同时写 `xlink:href` + `href`。
-`scripts/rasterize_icons.py` 可批量把 `assets/icons/*.svg` 栅格化为 144×144 PNG。
+**现象**：用 `<image href="data:image/svg+xml;base64,...">` 嵌 SVG 图标时，Chrome 正常，但部分 WebView（macOS WKWebView / 内嵌浏览器）会「部分图标显示、部分空白」。
+**最终修复**：`lib/arch.py` 的 `_icon_group()` 把图标 svg 的 `<defs>` + `<g>` **内联**进主 SVG（重命名 `clipPath` id 防冲突），用 `transform="translate(x,y) scale(s)"` 定位；**不再使用 `<image>`**。
+**备用**：`assets/icons_png/`（144×144 PNG）+ `scripts/rasterize_icons.py` 可作兜底。
+
+## 13. 嵌套分组 + 逐段震动
+
+- 分组框的 `children` 可以是另一个 `group`，实现嵌套（`VPC > HSS > ECS`）；`lib/arch.py` 按面积从大到小渲染，外层先画。
+- 动画：后端为每个 action 按节点间生成 `flow-<id>-<i>` 分段路径；前端逐段播放红点，**红点到达哪个节点才震动哪个节点**（不要一次性全震）。
+- `gui/app.py` 已加 `no-store` 响应头，避免浏览器缓存旧页面。
