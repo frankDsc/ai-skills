@@ -99,9 +99,9 @@ pip install huaweicloudsdkcore huaweicloudsdkecs huaweicloudsdkvpc huaweicloudsd
 cp config.example.json config.json   # 必填 AK/SK（所有 Demo 都建真实资源）
 ```
 
-### 1. 选型（查索引）
+### 1. 选型（查索引与参考架构）
 
-读 [`references/best-practices-index.md`](references/best-practices-index.md)：按领域找到「产品组合 + 最佳实践要点 + 推荐 Demo 流程 + 图标名」。产品能力/图标可用性见 [`references/service-catalog.md`](references/service-catalog.md)。
+先读 [`references/best-practices-index.md`](references/best-practices-index.md)：按领域找到「产品组合 + 最佳实践要点 + 推荐 Demo 流程 + 图标名」。复杂或行业化场景再查 Haydn 架构模板；需要云资源操作能力时再检索华为云官方 Agent Skills。检索到模板或 Skill 后，提取架构和约束，不能照搬成已验证的生产设计。具体检索、复用、校验和安全边界见 [`references/huawei-reference-architectures-and-skills.md`](references/huawei-reference-architectures-and-skills.md)。产品能力/图标可用性见 [`references/service-catalog.md`](references/service-catalog.md)。
 
 ### 2. 写 manifest
 
