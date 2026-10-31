@@ -26,7 +26,7 @@
 1. 查 `references/best-practices-index.md` 选型（产品组合 + 最佳实践 + 演示流程）；
 2. 写一个 `manifest.json`（节点 / 连线 / 动作 / 事件）；
 3. 用官方图标生成架构图；
-4. 起动态 GUI（与 HSS Demo 同款效果）；
+4. 起动态 GUI，动画根据业务语义表达数据迁移、ETL、部署、请求/响应或安全演练；
 5. 用 SDK 真实创建 VPC/ECS/EIP 等资源（**必需，所有 Demo 都连真实虚拟机**）。
 
 **新增一个领域 = 新增一个 manifest，无需改代码。**
