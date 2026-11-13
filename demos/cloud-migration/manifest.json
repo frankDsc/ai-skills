@@ -1,0 +1,209 @@
+{
+  "id": "synthetic-cloud-migration",
+  "title": "华为云合成数据搬迁实践",
+  "region": "cn-north-4",
+  "backend": "migration-lab",
+  "execution_status": "local-preview-only",
+  "data": "100% synthetic",
+  "nodes": [
+    {
+      "id": "source",
+      "x": 60,
+      "y": 180,
+      "w": 260,
+      "h": 120,
+      "icon": "ecs",
+      "label": "模拟源端",
+      "sub": "应用配置 · SQLite 订单 · 合成附件"
+    },
+    {
+      "id": "transfer",
+      "x": 490,
+      "y": 180,
+      "w": 260,
+      "h": 120,
+      "icon": "ecs",
+      "label": "搬迁执行引擎",
+      "sub": "全量复制 / 差异补迁 / 全内容校验"
+    },
+    {
+      "id": "target",
+      "x": 920,
+      "y": 180,
+      "w": 260,
+      "h": 120,
+      "icon": "ecs",
+      "label": "隔离目标端",
+      "sub": "目标目录 · 只读观察 · 逻辑割接"
+    },
+    {
+      "id": "control",
+      "x": 490,
+      "y": 40,
+      "w": 260,
+      "h": 90,
+      "icon": "iam",
+      "label": "流程门禁",
+      "sub": "冻结写入 · 校验通过 · 固定动作"
+    },
+    {
+      "id": "audit",
+      "x": 490,
+      "y": 350,
+      "w": 260,
+      "h": 80,
+      "icon": "lts",
+      "label": "本实验事件日志",
+      "sub": "实际输出 · 执行耗时 · 校验摘要"
+    }
+  ],
+  "edges": [
+    {
+      "id": "source-transfer",
+      "points": [
+        [
+          320,
+          240
+        ],
+        [
+          490,
+          240
+        ]
+      ]
+    },
+    {
+      "id": "transfer-target",
+      "points": [
+        [
+          750,
+          240
+        ],
+        [
+          920,
+          240
+        ]
+      ]
+    },
+    {
+      "id": "control-transfer",
+      "points": [
+        [
+          620,
+          130
+        ],
+        [
+          620,
+          180
+        ]
+      ],
+      "control": true
+    },
+    {
+      "id": "transfer-audit",
+      "points": [
+        [
+          620,
+          300
+        ],
+        [
+          620,
+          350
+        ]
+      ],
+      "control": true
+    }
+  ],
+  "actions": [
+    {
+      "id": "prepare",
+      "label": "生成模拟源数据",
+      "desc": "1,200 笔虚构订单、应用配置、12 个合成附件",
+      "flow": [
+        "source"
+      ],
+      "cmd": "python3 engine.py --action prepare"
+    },
+    {
+      "id": "full",
+      "label": "执行全量搬迁",
+      "desc": "复制应用、订单库与附件，保留源端服务",
+      "flow": [
+        "source",
+        "transfer",
+        "target"
+      ],
+      "cmd": "python3 engine.py --action full"
+    },
+    {
+      "id": "change",
+      "label": "产生源端增量",
+      "desc": "新增 25 笔、更新 10 笔、删除 5 笔订单及附件变更",
+      "flow": [
+        "source"
+      ],
+      "cmd": "python3 engine.py --action change"
+    },
+    {
+      "id": "sync",
+      "label": "执行差异补迁",
+      "desc": "按主键比对订单、按 SHA-256 比对文件，处理删除",
+      "flow": [
+        "source",
+        "transfer",
+        "target"
+      ],
+      "cmd": "python3 engine.py --action sync"
+    },
+    {
+      "id": "freeze",
+      "label": "冻结源端写入",
+      "desc": "进入只读割接窗口，阻止新的源端模拟交易",
+      "flow": [
+        "source"
+      ],
+      "cmd": "python3 engine.py --action freeze"
+    },
+    {
+      "id": "verify",
+      "label": "验证割接门禁",
+      "desc": "对比全部订单内容、文件摘要，并做只读业务探针",
+      "flow": [
+        "source",
+        "transfer",
+        "target"
+      ],
+      "cmd": "python3 engine.py --action verify"
+    },
+    {
+      "id": "cutover",
+      "label": "切换演示业务",
+      "desc": "门禁通过才将本实验逻辑路由切至目标端；保留只读回退窗",
+      "flow": [
+        "transfer",
+        "target"
+      ],
+      "cmd": "python3 engine.py --action cutover"
+    },
+    {
+      "id": "rollback",
+      "label": "执行只读回退",
+      "desc": "目标未产生新写入且源目标仍一致时才允许回退",
+      "flow": [
+        "target",
+        "transfer",
+        "source"
+      ],
+      "cmd": "python3 engine.py --action rollback"
+    },
+    {
+      "id": "target_write",
+      "label": "验证写后回退拦截",
+      "desc": "在目标写入一笔虚构订单，验证简单回切被禁止",
+      "flow": [
+        "target"
+      ],
+      "cmd": "python3 engine.py --action target_write"
+    }
+  ],
+  "note": "清单为固定引擎及架构模型的导出。使用独立 app.py；不是通用 SSH GUI 的已部署配置。"
+}

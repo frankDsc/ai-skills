@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="demo-token" content="{{ token }}">
+  <title>云上搬迁实践 · 华为云实验室</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header><a class="brand" href="/">HUAWEI <b>CLOUD</b><span>架构实践实验室</span></a><div class="header-meta"><span class="live-dot"></span>100% 合成数据 <span class="separator">/</span> 华北－北京四</div></header>
+<main>
+  <div class="intro"><div><div class="eyebrow">MIGRATION LAB <span>实践 02</span></div><h1>让业务，平稳抵达云端<span>。</span></h1><p>从第一笔数据，到最后一次校验。用一套可操作的演练，走完云上搬迁。</p></div><a class="console-link" href="https://console.huaweicloud.com/console/?region=cn-north-4#/home" target="_blank" rel="noreferrer">华为云控制台 ↗</a></div>
+  <div class="environment"><span class="mode" id="execution">正在读取执行环境</span><span>业务场景：虚构订单应用搬迁</span><span>规模：1,200 笔初始订单 / 12 个附件</span><span class="right" id="cloud-check">单区域 · 单执行节点</span></div>
+  <section class="metrics" aria-label="真实演练统计">
+    <article><div class="metric-label">源端订单 <span>01</span></div><div class="metric-value" id="source-count">—</div><div class="metric-foot" id="source-foot">等待生成模拟数据</div></article>
+    <article><div class="metric-label">目标端订单 <span>02</span></div><div class="metric-value" id="target-count">—</div><div class="metric-foot" id="target-foot">等待全量搬迁</div></article>
+    <article><div class="metric-label">数据一致性 <span>03</span></div><div class="metric-value" id="consistency">待校验</div><div class="metric-foot" id="diff-foot">逐行内容 + 文件 SHA-256</div></article>
+    <article><div class="metric-label">当前服务位置 <span>04</span></div><div class="metric-value" id="active">源端</div><div class="metric-foot" id="active-foot">保留源端，预留回退窗口</div></article>
+  </section>
+  <div class="workspace">
+    <aside class="panel workflow"><div class="panel-title"><div><span class="eyebrow">WORKFLOW</span><h2>搬迁旅程</h2></div><span id="step-count" class="small-label">0 / 7</span></div><div id="actions"></div><div class="workflow-note">每个动作执行后再显示结果。<br>动画仅用于讲解数据流向。</div></aside>
+    <section class="panel architecture"><div class="panel-title"><div><span class="eyebrow">LIVE ARCHITECTURE</span><h2>看见数据的每一次流动</h2></div><div class="legend"><span class="red-line"></span> 数据流 <span class="gray-line"></span> 控制 / 日志</div></div><div class="arch-wrap">{{ architecture | safe }}</div><div class="playback"><span id="animation-label" aria-live="polite">选择左侧步骤，开始你的搬迁实践</span><div><button id="replay" class="text-button" disabled>↻ 重播动画</button><button id="pause" class="text-button" disabled>暂停</button><label>速度 <select id="speed" aria-label="动画速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label></div></div><div class="boundary-note"><b>执行边界</b> <span id="boundary">当前为本机预演。</span>使用 SQLite 和文件复制演示流程；没有调用 SMS / DRS / OMS，也没有修改真实业务流量。</div></section>
+  </div>
+  <div class="details-grid">
+    <section class="panel event-panel"><div class="panel-title"><div><span class="eyebrow">OBSERVABILITY</span><h2>事件与执行证据</h2></div><div class="feed-controls"><span class="small-label">5 秒刷新</span><button class="text-button" id="refresh">立即刷新 ↻</button><button class="text-button" id="export">导出演练记录 ↓</button></div></div><div id="feed" aria-live="polite"><p class="empty">尚无演练事件，先生成模拟源数据。</p></div></section>
+    <section class="panel gates-panel"><div class="panel-title"><div><span class="eyebrow">CUTOVER GATES</span><h2>每一次切换，都有依据</h2></div></div><div id="gates"></div><div class="extra-actions"><button id="rollback" class="secondary">↶ 只读窗口回退</button><button id="target-write" class="text-button danger">测试写后回退拦截</button></div><div class="hashes"><span>源端摘要</span><code id="source-hash">—</code><span>目标摘要</span><code id="target-hash">—</code></div></section>
+  </div>
+  <section class="panel mapping"><div class="mapping-intro"><span class="eyebrow">PRODUCTION MAPPING</span><h2>从演练，走向真实搬迁</h2><p>以下为生产方案映射，未创建这些云服务。<br>MgC 负责评估编排；各专用工具负责对应迁移。</p></div><a href="https://support.huaweicloud.com/intl/zh-cn/bestpractice-sms/sms_12_0001.html" target="_blank" rel="noreferrer"><span class="map-number">01 / 主机</span><h3>SMS → ECS <span>↗</span></h3><p>系统、磁盘与应用迁移<br>本实验仅复制应用配置</p></a><a href="https://support.huaweicloud.com/intl/en-us/qs-drs/drs_qs_0001.html" target="_blank" rel="noreferrer"><span class="map-number">02 / 数据库</span><h3>DRS → RDS <span>↗</span></h3><p>全量初始化与增量同步<br>本实验使用 SQLite 行差异补迁</p></a><a href="https://support.huaweicloud.com/intl/zh-cn/bestpractice-oms/oms_05_5710.html" target="_blank" rel="noreferrer"><span class="map-number">03 / 对象</span><h3>OMS → OBS <span>↗</span></h3><p>对象迁移与一致性验证<br>本实验使用本地附件与摘要</p></a></section>
+  <footer><span>HUAWEI CLOUD · 云解决方案架构师实践</span><span>实验目标：零内容差异后割接 · RTO / RPO 为生产待验证指标</span></footer>
+</main>
+<div id="toast" role="status" hidden></div>
+<script src="/static/app.js"></script>
+</body></html>

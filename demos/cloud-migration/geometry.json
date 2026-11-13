@@ -1,0 +1,110 @@
+{
+  "nodes": [
+    {
+      "id": "source",
+      "x": 60,
+      "y": 180,
+      "w": 260,
+      "h": 120,
+      "icon": "ecs",
+      "label": "\u6a21\u62df\u6e90\u7aef",
+      "sub": "\u5e94\u7528\u914d\u7f6e \u00b7 SQLite \u8ba2\u5355 \u00b7 \u5408\u6210\u9644\u4ef6"
+    },
+    {
+      "id": "transfer",
+      "x": 490,
+      "y": 180,
+      "w": 260,
+      "h": 120,
+      "icon": "ecs",
+      "label": "\u642c\u8fc1\u6267\u884c\u5f15\u64ce",
+      "sub": "\u5168\u91cf\u590d\u5236 / \u5dee\u5f02\u8865\u8fc1 / \u5168\u5185\u5bb9\u6821\u9a8c"
+    },
+    {
+      "id": "target",
+      "x": 920,
+      "y": 180,
+      "w": 260,
+      "h": 120,
+      "icon": "ecs",
+      "label": "\u9694\u79bb\u76ee\u6807\u7aef",
+      "sub": "\u76ee\u6807\u76ee\u5f55 \u00b7 \u53ea\u8bfb\u89c2\u5bdf \u00b7 \u903b\u8f91\u5272\u63a5"
+    },
+    {
+      "id": "control",
+      "x": 490,
+      "y": 40,
+      "w": 260,
+      "h": 90,
+      "icon": "iam",
+      "label": "\u6d41\u7a0b\u95e8\u7981",
+      "sub": "\u51bb\u7ed3\u5199\u5165 \u00b7 \u6821\u9a8c\u901a\u8fc7 \u00b7 \u56fa\u5b9a\u52a8\u4f5c"
+    },
+    {
+      "id": "audit",
+      "x": 490,
+      "y": 350,
+      "w": 260,
+      "h": 80,
+      "icon": "lts",
+      "label": "\u672c\u5b9e\u9a8c\u4e8b\u4ef6\u65e5\u5fd7",
+      "sub": "\u5b9e\u9645\u8f93\u51fa \u00b7 \u6267\u884c\u8017\u65f6 \u00b7 \u6821\u9a8c\u6458\u8981"
+    }
+  ],
+  "edges": [
+    {
+      "id": "source-transfer",
+      "points": [
+        [
+          320,
+          240
+        ],
+        [
+          490,
+          240
+        ]
+      ]
+    },
+    {
+      "id": "transfer-target",
+      "points": [
+        [
+          750,
+          240
+        ],
+        [
+          920,
+          240
+        ]
+      ]
+    },
+    {
+      "id": "control-transfer",
+      "points": [
+        [
+          620,
+          130
+        ],
+        [
+          620,
+          180
+        ]
+      ],
+      "control": true
+    },
+    {
+      "id": "transfer-audit",
+      "points": [
+        [
+          620,
+          300
+        ],
+        [
+          620,
+          350
+        ]
+      ],
+      "control": true
+    }
+  ]
+}
