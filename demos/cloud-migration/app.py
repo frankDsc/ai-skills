@@ -8,7 +8,7 @@ import subprocess
 import threading
 
 from flask import Flask, jsonify, render_template, request
-from diagram import build
+from diagram import build, build_sms
 from engine import Lab, ACTIONS
 from transfer import TransferJob
 
@@ -87,7 +87,37 @@ def create_app(runner=None,port=8901,transfer=None):
 
     @app.get('/')
     def index():
-        return render_template('index.html',token=token,architecture=build())
+        return render_template('index.html',token=token,architecture=build(),sms_architecture=build_sms())
+
+    @app.get('/api/sms')
+    def sms_status():
+        path=Path.home()/'.local/state/cloud-migration-lab/sms-state.json'
+        if not path.exists(): return jsonify(enabled=False)
+        data=json.loads(path.read_text())
+        telemetry=path.with_name('sms-telemetry.json')
+        if telemetry.exists():
+            observed=json.loads(telemetry.read_text())
+            if data.get('released') or observed.get('task',{}).get('id')==data.get('task_id'): data.update(observed)
+        cloud_state=path.with_name('cloud-state.json')
+        if cloud_state.exists(): data['auto_release_at']=json.loads(cloud_state.read_text()).get('auto_release_at')
+        return jsonify(enabled=True,**{k:v for k,v in data.items()
+            if k in {'demo_id','source_ip','target_ip','target_id','target_name','task_id','task',
+                     'events','samples','validation','source_health','target_health','released','observed_at','error','source_progress','active_side','continuous_sync','auto_release_at'}})
+
+    @app.get('/api/sms/orders')
+    def sms_orders():
+        from sms_lab import SmsLab
+        try: return jsonify(SmsLab().orders())
+        except Exception: return jsonify(error='订单服务不可用或尚未通过验收'),502
+
+    @app.post('/api/sms/route')
+    def sms_route():
+        data=request.get_json(silent=True)
+        if not isinstance(data,dict) or data.get('side') not in ('source','target'):
+            return jsonify(error='未知主机'),400
+        from sms_lab import SmsLab
+        try: return jsonify(SmsLab().route(data['side']))
+        except Exception: return jsonify(error='切换失败：目标需先通过实际迁移验收'),409
 
     @app.get('/api/status')
     def status():
@@ -106,7 +136,7 @@ def create_app(runner=None,port=8901,transfer=None):
                          'public_ip':r.get('public_ip'),'created_at':r.get('created_at'),
                          'flavor':cloud.plan['flavor'],
                          'hourly_cny':round(cloud.plan.get('prices',{}).get('hourly_total',0.4996),4),
-                         'budget_cny':3,'auto_release_at':cloud.state.get('auto_release_at')}
+                         'budget_cny':cloud.state.get('sms_budget_cny',3),'auto_release_at':cloud.state.get('auto_release_at')}
             return jsonify(**data,busy=False,execution='ecs-ssh' if runner.host else 'local',
                            execution_label='云环境已释放 · 历史实测记录' if data.get('released') else ('真实 ECS · SSH 执行' if runner.host else '本机预演 · 尚未部署 ECS'),
                            region='cn-north-4',cloud_check=cloud_check,cloud_details=details)

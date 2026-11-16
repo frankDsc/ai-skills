@@ -5,3 +5,4 @@ huaweicloudsdkiam>=3.1.220,<4
 paramiko>=3.5,<6
 huaweicloudsdkims>=3.1.220,<4
 huaweicloudsdkbss>=3.1.220,<4
+huaweicloudsdksms>=3.1.220,<4

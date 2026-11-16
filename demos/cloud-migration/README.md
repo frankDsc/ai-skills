@@ -2,7 +2,9 @@
 
 100% 合成数据的可操作演练：生成源数据 → 全量复制 → 生成增量 → 差异补迁 → 冻结写入 → 全内容校验 → 逻辑割接 → 只读窗口回退。
 
-2026-11-16 已完成**真实 ECS 实测**：北京四 c6.large.2（2 核 4GB）、Ubuntu 22.04、40GB 高 IO 系统盘、5Mbps 按流量 EIP、独立 VPC/子网及只允许操作者 `/32` 的 SSH 安全组。前端增加本机 → SFTP → ECS 的 128 MiB 合成文件实传，展示实际字节数、当前/平均速率、预计剩余时间、进度及云端 SHA-256 校验。原七步订单演练在同一真实 ECS 的逻辑隔离目录内执行；两种测试分别记录，没有调用 SMS/DRS/OMS，也没有修改真实 DNS/ELB。
+2026-11-16 最初完成**真实 ECS 实测**：北京四 c6.large.2（2 核 4GB）、Ubuntu 22.04、40GB 高 IO 系统盘、5Mbps 按流量 EIP、独立 VPC/子网及只允许操作者 `/32` 的 SSH 安全组。前端包含本机 → SFTP → ECS 的 128 MiB 合成文件实传。原七步订单演练在同一真实 ECS 的逻辑隔离目录内执行。
+
+随后扩展为**真实双 ECS 的 SMS 主机迁移测试**：源端安装官方 SMS Agent，目标端为同 VPC 新建、无公网 IP 的空白 ECS，迁移系统、应用与磁盘文件。前端的 SMS 区独立展示云端任务进度、Mbit/s 速率曲线、阶段、原始错误、数据验收和实际订单 HTTP 接口。三种测试分别记录；没有使用 DRS / OMS，也没有修改真实 DNS / ELB。SMS 持续同步遇到 Agent `SMS.0007 / NoneType vols_map` 异常，未通过；随后停写全量主机迁移已成功并通过独立启动及数据验收，详见 [VERIFICATION.md](VERIFICATION.md)。
 
 实测记录见 [VERIFICATION.md](VERIFICATION.md)。旧 `frontend-preview.jpg` 为最初本机预演版本的历史外观；当前实时版本以运行页面为准。
 
@@ -22,7 +24,20 @@ python3 -m venv .venv
 
 前端支持按业务方向逐段流动、到达节点响应、0.5×/1×/2× 调速、暂停/继续、纯视觉重播、五秒无缓存状态刷新、JSON 记录导出和窄屏布局。重播不会请求执行接口。
 
-运行时默认位于 `~/.local/state/cloud-migration-lab`，也可用 `MIGRATION_RUNTIME` 指定新的空目录开始另一轮。保留旧目录即可保留证据；没有自动删除功能。不要同时使用 CLI 与 GUI 修改同一运行时。
+运行时默认位于 `~/.local/state/cloud-migration-lab`。`MIGRATION_RUNTIME` 仅改变本机目录演练路径，不购买新云资源。云资源由既有私有状态管理，用户已授权本轮四小时后自动清理，主机配置云端到期删除；随后由本地自动化核验并清理网络及迁移资源。本地自动化要求电脑开机且应用可运行。保留运行时即可保留证据，不要并发运行多个修改任务。
+
+## SMS 主机迁移
+
+`sms_lab.py` 复用既有 `Cloud` 实例和已批准的专用源机，新建一台目标机；创建资源和格式化目标盘前必须取得用户的配置、预算、测试数据范围授权，并由用户确认 SMS 服务声明。不得对生产机器运行。
+
+- 目标机仅向源端私网 `/32` 开放迁移端口 22 / 8900 与订单服务 8080，不创建第二个 EIP。
+- 源端 `/opt/sms-migration-lab` 中部署 `order_service.py` 与 `sms-orders.service`，初始 10,000 笔合成订单和 2 GiB 随机文件。额外写入器不设置自启动，避免迁移后双写。
+- Agent 从控制台的官方 OBS 下载入口获取，执行 SHA-256、CMS、CRL 检查后安装。既有 AK/SK 经加密 SSH 的 stdin 提供给授权的测试源机 Agent，不进入命令参数、源码、前端或导出。Agent 自身管理认证数据；迁移后停止 Agent 并移除测试安装目录，两台测试主机到期释放。生产应使用专用最小权限迁移账号。
+- `sms_lab.py create-task` / `start` 调用真实 SMS API，`sms_watch.py` 每五秒只读采样，不调用伪造进度的 Agent 上报接口。
+- `sms_lab.py freeze` 停止本次合成写入器并检查数据库；`create-task --cold` 仅允许停写后创建全量任务。是否成功由 SMS 状态与 `validate` 的独立实例身份、启动服务、SQLite 完整性、订单内容摘要和目标实际文件 SHA-256 共同判断。
+- 前端“切到目标机”必须经过验收，实际读取对应主机的订单 HTTP 接口；这只是演示客户端访问路由，不更改 DNS / ELB。回切仅限本次无目标写入的只读演示。
+- 私有 `sms-state.json` 保存资源/动作和验收，`sms-telemetry.json` 保存只读采样，避免采样覆盖操作状态。失败任务与日志证据保存在本机，不提交云资源标识。
+- `cloud.py release --confirm <完整 Demo ID>` 会先清理 SMS 任务、目标机和辅助资源，再清理源机与网络；归属改变或挂载未知磁盘时拒绝删除。失败保留 ID 供重试。
 
 ## 合成数据及验证
 
@@ -52,21 +67,21 @@ MIGRATION_SSH_HOST=migration-lab-ecs .venv/bin/python app.py --port 8901
 
 自定义别名使用 `BatchMode=yes` 与 `StrictHostKeyChecking=yes`，指纹异常不会降级。前端与控制后端在本机，订单演练的源/目标为单 ECS 内不同目录，不能代表托管迁移服务性能。另有独立 SFTP 面板测量真正的本机到 ECS 网络传输。本轮已验收托管状态下的 Paramiko 路径，自定义 SSH 别名路径未单独验收。
 
-只读账号检查使用 `cloud_check.py`；先安装 `requirements-cloud.txt`，通过 `HWC_CREDENTIALS_CSV` 读取既有凭证文件。CSV 列为 `Access Key Id` / `Secret Access Key`，恰好一行。AK/SK 仅驻留进程内存，不写入仓库、前端或证据。检查结果写入私有运行时的 `cloud-check.json`；页面显示“已核对”及时间，而非实时连接承诺。
+只读账号检查使用 `cloud_check.py`；先安装 `requirements-cloud.txt`，通过 `HWC_CREDENTIALS_CSV` 读取既有凭证文件。CSV 列为 `Access Key Id` / `Secret Access Key`，恰好一行。只读检查中的 AK/SK 仅驻留进程内存，不写入仓库、前端或证据；SMS Agent 的授权认证另见上节。检查结果写入私有运行时的 `cloud-check.json`；页面显示“已核对”及时间，而非实时连接承诺。
 
 ## 架构约束与取舍
 
 | 维度 | 本演练 | 生产迁移需验证 |
 | --- | --- | --- |
-| 业务与规模 | 虚构订单应用，单次补迁、单操作者，数据小于 1 MiB | 真实应用依赖、变更率、峰值 TPS、数据体量与停机窗 |
+| 业务与规模 | 同目录小样本练习 + 双主机 SMS 测试；10,000 笔初始订单、2 GiB 随机文件，源端系统占用另计 | 真实应用依赖、变更率、峰值 TPS、数据体量与停机窗 |
 | 数据与合规 | 纯合成数据，无个人信息；区域假设北京四 | 数据驻留、跨境、加密、审计保留和许可证要求 |
-| 安全与 IAM | 本机绑定，校验 Host/Origin/随机令牌，固定动作，运行时目录 0700；既有凭证只读查询 | 最小权限迁移账号、时限授权、凭证轮换；存储加密及审计 |
+| 安全与 IAM | 本机绑定、Host/Origin/令牌校验、固定动作、运行时 0700；Agent 使用已授权凭证，只安装于专用测试源机 | 最小权限迁移账号、时限授权、凭证轮换；存储加密及审计 |
 | 网络 | 本机回环；可选 SSH 固定主机指纹、只放行操作者 `/32` | 地址不重叠、路由/DNS、专线/VPN/公网吞吐；分别验证控制与数据通道 |
 | 可靠性 | SQLite 事务、原子状态文件、操作互斥、保留源端 | 多 AZ 的应用与托管数据库、重试、断点续传、兼容性及业务验收 |
 | 性能 | 展示实测动作毫秒数与实际记录/文件差异 | 峰值压测、迁移限速、端到端带宽与源端负载；小样本不可外推 |
 | 可观测性 | 实际动作事件、错误/拦截、校验摘要、JSON 导出 | CES/LTS/CTS，错误率与延迟门槛、复制积压和告警 |
 | 灾备 / RTO / RPO | 割接条件为零内容差异；只读窗回退，不承诺生产 RTO/RPO | 业务假设 RTO≤30 分钟、割接 RPO=0，需停写/最后同步与恢复实测；目标写后回退单独设计 |
-| 成本 | 实时询价固定合计 ¥0.4996/小时，出云 ¥0.80/GB；本轮预算 ¥3，并按用户要求设置两小时后自动清理 | 重新询价后确认预算；释放全部相关资源后才停止对应计费 |
+| 成本 | 源机含 EIP ¥0.4996/h；新增目标机与盘 ¥0.4796/h，另有 SMS 临时盘；本轮批准 ¥10，四小时后清理 | 重新询价后确认预算；释放全部相关资源后才停止对应计费 |
 
 未引入多云、多区域、Kubernetes、队列或自建数据库集群。生产目标优先托管服务，但本实验使用 SQLite 把数据一致性过程做成可重复观察的最小练习。
 
@@ -80,14 +95,15 @@ MIGRATION_SSH_HOST=migration-lab-ecs .venv/bin/python app.py --port 8901
 ## 检查
 
 ```sh
-.venv/bin/python -m unittest -v test_lab.py test_transfer.py test_cloud.py
+.venv/bin/python -m unittest -v test_lab.py test_transfer.py test_cloud.py test_sms.py
 python3 diagram.py
 python3 ../../skills/architecture-diagram-tool/scripts/validate_geometry.py geometry.json
 node --check static/app.js
 node --check static/transfer.js
+node --check static/sms.js
 ```
 
-当前共 11 项测试，覆盖订单完整性、过期门禁、写后回退拦截、HTTP 边界、状态读取不阻塞动作、速率计算、摘要失败不验收、证据恢复及资源归属检查。真实 ECS、128 MiB SFTP、七步订单补迁、割接及只读回退已实测；SMS/DRS/OMS 未集成。
+当前共 15 项测试，覆盖订单完整性、过期门禁、写后回退拦截、HTTP 边界、状态读取不阻塞动作、速率计算、摘要失败不验收、证据恢复及资源归属检查。SMS 新增检查包括拒绝删除非本轮任务、拒绝删除挂有未知磁盘的目标机、拒绝删除父盘不匹配的快照、未验收目标不能接收演示流量；真实云端结果见实测记录。DRS / OMS 未集成。
 
 ## 速率与费用口径
 

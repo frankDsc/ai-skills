@@ -157,6 +157,12 @@ class Cloud:
 
     def release(self,confirmation):
         if confirmation!=self.state['demo_id']:raise ValueError('必须确认完整 Demo ID')
+        runtime=getattr(self,'runtime',None)
+        if runtime and (runtime/'sms-state.json').exists():
+            sms_state=json.loads((runtime/'sms-state.json').read_text())
+            if not sms_state.get('released'):
+                from sms_lab import SmsLab
+                SmsLab().release(confirmation)
         r=self.state['resources'];name=self.state['demo_id']
         def remove(*keys):
             for key in keys:r.pop(key,None)
@@ -169,6 +175,8 @@ class Cloud:
                 server=None
             if server:
                 if server.name!=name:raise ValueError('拒绝删除：ECS 名称与本轮 Demo 不匹配')
+                if any(v.id!=r.get('root_volume_id') for v in server.os_extended_volumesvolumes_attached):
+                    raise ValueError('拒绝删除：源 ECS 挂载了本轮未记录的磁盘')
                 self.ecs.delete_servers(DeleteServersRequest(body=DeleteServersRequestBody(
                     servers=[ServerId(id=sid)],delete_publicip=False,delete_volume=True)))
                 for _ in range(60):

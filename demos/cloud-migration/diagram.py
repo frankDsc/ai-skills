@@ -42,6 +42,29 @@ def build():
     return '\n'.join(out)
 
 
+def build_sms():
+    icons=ROOT/'skills/huawei-cloud-bestpractice-demo/assets/icons'
+    svg=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 280" role="img" aria-label="同一 VPC 中的两台独立 ECS，源端 Agent 经私网直传到目标端；SMS 是迁移控制面">',
+         '<defs><marker id="sms-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7" fill="#c7000b"/></marker></defs>',
+         '<rect x="25" y="105" width="950" height="160" rx="12" fill="#fafbfc" stroke="#e4e5ec"/>',
+         '<text x="45" y="255" font-size="11" fill="#89909c">专用 VPC · 北京四 · 私网直传 · 目标机无公网 IP</text>',
+         '<path d="M205 130V110H450V90 M570 90V110H800V130" fill="none" stroke="#aaa" stroke-width="1.5" stroke-dasharray="5 4"/>',
+         '<path d="M340 185H660" fill="none" stroke="#c7000b" stroke-width="2" marker-end="url(#sms-arrow)"/>',
+         '<text x="400" y="170" font-size="12" fill="#9c4850">系统 / 应用 / 文件</text>',
+         '<text x="415" y="208" font-size="11" fill="#9298a2">加密迁移数据流</text>']
+    for x,y,w,h,icon,label,sub in [(400,10,220,80,'sms','SMS 迁移控制面','注册 · 编排 · 任务遥测'),
+            (70,130,270,105,'ecs','源 ECS + SMS Agent','Ubuntu · 订单服务 · 合成数据'),
+            (660,130,270,105,'ecs','独立目标 ECS','系统迁移 · 启动服务 · 数据验收')]:
+        svg.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="9" fill="white" stroke="#dedfe7"/>')
+        if (icons/(icon+'.svg')).exists():
+            svg.append(_icon_group(str(icons),icon,x+15,y+15,26).replace('ic-'+icon,'sms-icon-'+str(x)))
+        else:
+            svg.append(f'<text x="{x+15}" y="{y+32}" font-size="10" fill="#c7000b" font-weight="700">SMS</text>')
+        svg.append(f'<text x="{x+50}" y="{y+33}" font-size="15" font-weight="600" fill="#252934">{label}</text><text x="{x+15}" y="{y+62}" font-size="11" fill="#8a909b">{sub}</text>')
+    svg.append('<circle id="sms-flow" r="4" fill="#c7000b" style="display:none"><animateMotion dur="1.2s" repeatCount="indefinite" path="M340 185H650"/></circle></svg>')
+    return ''.join(svg)
+
+
 if __name__=='__main__':
     here=Path(__file__).parent
     (here/'static/architecture.svg').write_text(build())
