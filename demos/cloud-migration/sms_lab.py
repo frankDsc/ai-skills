@@ -328,6 +328,12 @@ print(json.dumps(health))
                 server = c.ecs.show_server(ShowServerRequest(server_id=sid)).server
                 if server.name != self.state['target_name']:
                     raise ValueError('Target ECS ownership changed')
+                if server.status == 'DELETED':
+                    server = None
+            except ClientRequestException as exc:
+                if exc.status_code != 404: raise
+                server = None
+            if server:
                 attached = {v.id for v in server.os_extended_volumesvolumes_attached}
                 owned = {self.state.get('target_root_volume_id'),self.state.get('image_disk_id')}
                 if not attached.issubset(owned):
@@ -337,14 +343,14 @@ print(json.dumps(health))
                 c.ecs.delete_servers(DeleteServersRequest(body=DeleteServersRequestBody(
                     servers=[ServerId(id=sid)], delete_publicip=False, delete_volume=True)))
                 for _ in range(60):
-                    try: c.ecs.show_server(ShowServerRequest(server_id=sid))
+                    try:
+                        current = c.ecs.show_server(ShowServerRequest(server_id=sid)).server
+                        if current.status == 'DELETED': break
                     except ClientRequestException as exc:
                         if exc.status_code == 404: break
                         raise
                     time.sleep(2)
                 else: raise TimeoutError('Target ECS deletion not confirmed')
-            except ClientRequestException as exc:
-                if exc.status_code != 404: raise
             remove('target_id')
         volumes = set(self.state.get('target_volume_ids',[]))
         if self.state.get('target_root_volume_id'): volumes.add(self.state['target_root_volume_id'])

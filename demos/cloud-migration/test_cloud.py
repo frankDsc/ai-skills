@@ -56,5 +56,12 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(calls,['GET'])
         self.assertIn('root_volume_id',c.state['resources'])
 
+    def test_deleted_server_tombstone_does_not_block_release(self):
+        c=self.cloud({'server_id':'deleted-server'})
+        c.ecs=SimpleNamespace(show_server=lambda _:SimpleNamespace(
+            server=SimpleNamespace(name='migration-test',status='DELETED')))
+        self.assertTrue(c.release('migration-test')['released'])
+        self.assertNotIn('server_id',c.state['resources'])
+
 
 if __name__=='__main__':unittest.main()

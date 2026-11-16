@@ -173,6 +173,7 @@ class Cloud:
             except ClientRequestException as exc:
                 if exc.status_code!=404:raise
                 server=None
+            if server and server.name==name and getattr(server,'status',None)=='DELETED':server=None
             if server:
                 if server.name!=name:raise ValueError('拒绝删除：ECS 名称与本轮 Demo 不匹配')
                 if any(v.id!=r.get('root_volume_id') for v in server.os_extended_volumesvolumes_attached):
@@ -180,7 +181,9 @@ class Cloud:
                 self.ecs.delete_servers(DeleteServersRequest(body=DeleteServersRequestBody(
                     servers=[ServerId(id=sid)],delete_publicip=False,delete_volume=True)))
                 for _ in range(60):
-                    try:self.ecs.show_server(ShowServerRequest(server_id=sid))
+                    try:
+                        current=self.ecs.show_server(ShowServerRequest(server_id=sid)).server
+                        if current.status=='DELETED':break
                     except ClientRequestException as exc:
                         if exc.status_code==404:break
                         raise

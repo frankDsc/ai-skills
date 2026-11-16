@@ -21,7 +21,7 @@ class SmsBoundaryTests(unittest.TestCase):
 
     def test_unknown_disk_prevents_ecs_deletion(self):
         lab=self.lab()
-        server=SimpleNamespace(name=lab.state['target_name'],
+        server=SimpleNamespace(name=lab.state['target_name'],status='ACTIVE',
             os_extended_volumesvolumes_attached=[SimpleNamespace(id='foreign-disk')])
         lab.cloud=SimpleNamespace(ecs=SimpleNamespace(show_server=lambda _:SimpleNamespace(server=server)))
         with self.assertRaisesRegex(ValueError,'unrecognized disk'):lab.release('migration-test')
@@ -42,6 +42,17 @@ class SmsBoundaryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'dedicated target'):lab.cleanup_snapshots()
         self.assertEqual(calls,['GET'])
         self.assertEqual(lab.state['snapshot_ids'],['snapshot'])
+
+    def test_deleted_target_tombstone_still_checks_disk_removal(self):
+        lab=self.lab();calls=[]
+        server=SimpleNamespace(name=lab.state['target_name'],status='DELETED')
+        def api(service,path,**kwargs):
+            calls.append(path);return None
+        lab.cloud=SimpleNamespace(pid='project',api=api,
+            ecs=SimpleNamespace(show_server=lambda _:SimpleNamespace(server=server)))
+        self.assertTrue(lab.release('migration-test')['sms_released'])
+        self.assertNotIn('target_id',lab.state)
+        self.assertEqual(calls,['/v2/project/volumes/owned-root'])
 
 
 if __name__=='__main__':unittest.main()
