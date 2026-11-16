@@ -11,6 +11,14 @@
 <main>
   <div class="intro"><div><div class="eyebrow">MIGRATION LAB <span>实践 02</span></div><h1>让业务，平稳抵达云端<span>。</span></h1><p>从第一笔数据，到最后一次校验。用一套可操作的演练，走完云上搬迁。</p></div><a class="console-link" href="https://console.huaweicloud.com/console/?region=cn-north-4#/home" target="_blank" rel="noreferrer">华为云控制台 ↗</a></div>
   <div class="environment"><span class="mode" id="execution">正在读取执行环境</span><span>业务场景：虚构订单应用搬迁</span><span>规模：1,200 笔初始订单 / 12 个附件</span><span class="right" id="cloud-check">单区域 · 单执行节点</span></div>
+  <section class="panel transfer-panel" aria-label="真实网络搬迁速率">
+    <div class="cloud-resource" id="cloud-resource">正在读取真实云资源信息</div>
+    <div class="panel-title"><div><span class="eyebrow">REAL TRANSFER · LIVE TELEMETRY</span><h2>跨网络搬迁，实时看见速度</h2></div><button id="transfer-start" class="transfer-button" disabled>开始真实传输 · 128 MiB</button></div>
+    <div class="transfer-route"><span>本机合成文件</span><div class="wire"><i id="transfer-packet"></i></div><span>SSH / SFTP</span><div class="wire"><i id="target-packet"></i></div><span>华为云真实 ECS</span><b id="transfer-phase">等待 ECS 就绪</b></div>
+    <div class="transfer-metrics"><div><small>当前发送速率</small><strong id="transfer-rate">—</strong><span>约 1 秒滑动窗口 · MiB/s</span></div><div><small>平均发送速率</small><strong id="transfer-average">—</strong><span>整个传输阶段 · MiB/s</span></div><div><small>已发送 / 总量</small><strong id="transfer-bytes">0 / 128 MiB</strong><span id="transfer-eta">预计剩余：—</span></div><div><small>目标完整性</small><strong id="transfer-integrity">待传输</strong><span id="transfer-time">传输耗时：—</span></div></div>
+    <div class="transfer-chart"><div class="chart-caption"><span>实际发送吞吐 · 每秒刷新</span><span id="transfer-peak">峰值 — MiB/s</span></div><svg viewBox="0 0 1000 105" preserveAspectRatio="none" role="img" aria-label="按实际字节数和时间采样的传输速率曲线"><path d="M0 25H1000 M0 55H1000 M0 85H1000" stroke="#eceef2" fill="none"/><path id="rate-area" fill="#c7000b0d"/><polyline id="rate-line" fill="none" stroke="#c7000b" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div class="transfer-progress"><i id="transfer-progress"></i></div><div class="chart-caption"><span id="transfer-progress-label">0% 已发送</span><span id="transfer-sampling">等待实际传输采样</span></div></div>
+    <div class="boundary-note"><b>测量口径</b>速率来自 SFTP 客户端实际发送字节与计时，SSH 不启用压缩。传输结束后独立确认云端文件长度及 SHA-256；下方七步是云内订单搬迁演练，和本段跨网络传输分别记录。</div>
+  </section>
   <section class="metrics" aria-label="真实演练统计">
     <article><div class="metric-label">源端订单 <span>01</span></div><div class="metric-value" id="source-count">—</div><div class="metric-foot" id="source-foot">等待生成模拟数据</div></article>
     <article><div class="metric-label">目标端订单 <span>02</span></div><div class="metric-value" id="target-count">—</div><div class="metric-foot" id="target-foot">等待全量搬迁</div></article>
@@ -30,4 +38,5 @@
 </main>
 <div id="toast" role="status" hidden></div>
 <script src="/static/app.js"></script>
+<script src="/static/transfer.js"></script>
 </body></html>

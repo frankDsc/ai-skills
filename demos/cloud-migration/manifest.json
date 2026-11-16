@@ -3,7 +3,7 @@
   "title": "华为云合成数据搬迁实践",
   "region": "cn-north-4",
   "backend": "migration-lab",
-  "execution_status": "local-preview-only",
+  "execution_status": "real-ecs-verified",
   "data": "100% synthetic",
   "nodes": [
     {
@@ -205,5 +205,13 @@
       "cmd": "python3 engine.py --action target_write"
     }
   ],
-  "note": "清单为固定引擎及架构模型的导出。使用独立 app.py；不是通用 SSH GUI 的已部署配置。"
+  "note": "清单为固定引擎及架构模型的导出。使用独立 app.py；不是通用 SSH GUI 的已部署配置。",
+  "network_transfer": {
+    "source": "local synthetic file",
+    "target": "dedicated ECS via SFTP",
+    "payload_bytes": 134217728,
+    "status_poll_seconds": 1,
+    "integrity": "target length and SHA-256",
+    "measurement": "actual client bytes and monotonic time"
+  }
 }

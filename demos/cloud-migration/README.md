@@ -2,15 +2,15 @@
 
 100% 合成数据的可操作演练：生成源数据 → 全量复制 → 生成增量 → 差异补迁 → 冻结写入 → 全内容校验 → 逻辑割接 → 只读窗口回退。
 
-当前交付为**本机预演**。2026-11-13 已成功访问华为云北京四控制台，并通过既有凭证完成 IAM 项目与 ECS 列表的只读查询；该区域没有可复用 ECS。本次没有创建付费资源，没有执行 SMS、DRS、OMS 任务，没有修改真实 DNS/ELB。真实 ECS 的执行方式及费用待用户选择。不能将本机演练报告用作真实云服务迁移的验收证明。
+2026-11-16 已完成**真实 ECS 实测**：北京四 c6.large.2（2 核 4GB）、Ubuntu 22.04、40GB 高 IO 系统盘、5Mbps 按流量 EIP、独立 VPC/子网及只允许操作者 `/32` 的 SSH 安全组。前端增加本机 → SFTP → ECS 的 128 MiB 合成文件实传，展示实际字节数、当前/平均速率、预计剩余时间、进度及云端 SHA-256 校验。原七步订单演练在同一真实 ECS 的逻辑隔离目录内执行；两种测试分别记录，没有调用 SMS/DRS/OMS，也没有修改真实 DNS/ELB。
 
-![前端预览](frontend-preview.jpg)
+实测记录见 [VERIFICATION.md](VERIFICATION.md)。旧 `frontend-preview.jpg` 为最初本机预演版本的历史外观；当前实时版本以运行页面为准。
 
 复用已有华为云最佳实践 Demo 的声明式清单、官方 SVG 图标与动作/事件布局；图标直接内联，防止 WebView 中 SVG 图片引用失效。架构图遵循红白配色、正交连线及管理面/数据面分离规范。`manifest.json` 是从固定引擎动作及架构模型导出的演练清单；执行逻辑在 `engine.py`，并非通用 GUI 可直接加载的 SSH manifest。
 
 ## 启动
 
-Python 3.9+，普通运行仅依赖 Flask：
+Python 3.9+。本机预演仅需 Flask；真实 ECS 还需 `requirements-cloud.txt` 中的官方 SDK 与 Paramiko：
 
 ```sh
 python3 -m venv .venv
@@ -18,7 +18,7 @@ python3 -m venv .venv
 .venv/bin/python app.py --port 8901
 ```
 
-打开 `http://127.0.0.1:8901/`。按左侧七个步骤演练，右侧观察门禁与事件。割接后可点“只读窗口回退”；如点“测试写后回退拦截”，引擎会在目标插入一笔虚构订单，之后回退请求会被后端明确拦截。
+打开 `http://127.0.0.1:8901/`。有本轮真实资源状态时自动使用云端引擎，无资源时明确标为本机预演。顶部“开始真实传输”生成 128 MiB 随机合成文件，通过 SFTP 上传到专属 ECS，速率按实际字节与单调时钟计算，每秒刷新；目标长度和 SHA-256 一致后才验收。原七步订单演练和事件位于下方。割接后可执行只读回退；测试目标新写入后，后端会阻止简单回切。
 
 前端支持按业务方向逐段流动、到达节点响应、0.5×/1×/2× 调速、暂停/继续、纯视觉重播、五秒无缓存状态刷新、JSON 记录导出和窄屏布局。重播不会请求执行接口。
 
@@ -34,7 +34,13 @@ python3 -m venv .venv
 - 割接：源端必须冻结、最新校验通过且当前内容仍一致；仅切换实验引擎逻辑路由，不修改外部业务入口。
 - 回退：仅允许目标未产生新写入且两端仍一致的只读窗口回切。写后回退需要另行设计反向同步/合并，本实验会拦截，不做丢弃目标写入的演示。
 
-## 可选：既有 ECS 运行引擎
+## 真实 ECS 与只读询价
+
+`cloud_plan.py` 查询北京四当前规格、可用区、Ubuntu 镜像和 BSS 按需价格，不创建资源；计划保存在仓库外私有运行时。价格确认后，`cloud.py provision --ssh-cidr <IPv4/32>` 创建并逐项记录专属资源；实例 ACTIVE 后用 `cloud.py bind-eip` 绑定 EIP。首次 `cloud.py pin-host` 仅对 API 核验名称匹配的本轮新实例固定 SSH 主机指纹（TOFU），后续拒绝未知/变更指纹。通过独立通道核对首个指纹可进一步加强首次连接信任。
+
+资源状态、随机密码和 known_hosts 都在私有运行时，前端只返回必要信息。`cloud.py release --confirm <完整 Demo ID>` 仅释放本次记录且归属校验匹配的资源，先确认实例删除，再核对系统盘、EIP、安全组、子网与 VPC。逐项持久化移除 ID，失败保留剩余项。释放后前端显示历史实测并禁用云端动作，不自动重新购买或回退成模拟云连接。
+
+### 可选：既有 ECS 的 SSH 配置别名
 
 云资源创建与费用确认完成后，可复用同一引擎经 SSH 在指定测试 ECS 上运行。执行器通过 stdin 向远端 Python 发送固定引擎代码，远端使用专属路径 `.local/state/cloud-migration-lab`。
 
@@ -44,7 +50,7 @@ python3 -m venv .venv
 MIGRATION_SSH_HOST=migration-lab-ecs .venv/bin/python app.py --port 8901
 ```
 
-SSH 使用 `BatchMode=yes` 与 `StrictHostKeyChecking=yes`，连接或指纹异常不会降级。前端与控制后端仍在本机，云端只运行合成数据引擎；源/目标依然是单 ECS 内不同目录，不能代表跨主机迁移的吞吐、时延、网络容灾或 SMS/DRS/OMS 能力。此 SSH 路径尚未在真实 ECS 上验收。
+自定义别名使用 `BatchMode=yes` 与 `StrictHostKeyChecking=yes`，指纹异常不会降级。前端与控制后端在本机，订单演练的源/目标为单 ECS 内不同目录，不能代表托管迁移服务性能。另有独立 SFTP 面板测量真正的本机到 ECS 网络传输。本轮已验收托管状态下的 Paramiko 路径，自定义 SSH 别名路径未单独验收。
 
 只读账号检查使用 `cloud_check.py`；先安装 `requirements-cloud.txt`，通过 `HWC_CREDENTIALS_CSV` 读取既有凭证文件。CSV 列为 `Access Key Id` / `Secret Access Key`，恰好一行。AK/SK 仅驻留进程内存，不写入仓库、前端或证据。检查结果写入私有运行时的 `cloud-check.json`；页面显示“已核对”及时间，而非实时连接承诺。
 
@@ -60,7 +66,7 @@ SSH 使用 `BatchMode=yes` 与 `StrictHostKeyChecking=yes`，连接或指纹异�
 | 性能 | 展示实测动作毫秒数与实际记录/文件差异 | 峰值压测、迁移限速、端到端带宽与源端负载；小样本不可外推 |
 | 可观测性 | 实际动作事件、错误/拦截、校验摘要、JSON 导出 | CES/LTS/CTS，错误率与延迟门槛、复制积压和告警 |
 | 灾备 / RTO / RPO | 割接条件为零内容差异；只读窗回退，不承诺生产 RTO/RPO | 业务假设 RTO≤30 分钟、割接 RPO=0，需停写/最后同步与恢复实测；目标写后回退单独设计 |
-| 成本 | 当前未创建付费资源；仅本机运行 | 最小实验建议 1 台 x86 小规格 ECS、40 GB 系统盘；按需，EIP 按需选择，控制台实时报价后确认预算；结束后释放资源，关机不等于释放 |
+| 成本 | 实时询价固定合计 ¥0.4996/小时，出云 ¥0.80/GB；本轮预算 ¥3，并按用户要求设置两小时后自动清理 | 重新询价后确认预算；释放全部相关资源后才停止对应计费 |
 
 未引入多云、多区域、Kubernetes、队列或自建数据库集群。生产目标优先托管服务，但本实验使用 SQLite 把数据一致性过程做成可重复观察的最小练习。
 
@@ -74,10 +80,17 @@ SSH 使用 `BatchMode=yes` 与 `StrictHostKeyChecking=yes`，连接或指纹异�
 ## 检查
 
 ```sh
-.venv/bin/python -m unittest -v test_lab.py
+.venv/bin/python -m unittest -v test_lab.py test_transfer.py test_cloud.py
 python3 diagram.py
 python3 ../../skills/architecture-diagram-tool/scripts/validate_geometry.py geometry.json
 node --check static/app.js
+node --check static/transfer.js
 ```
 
-四项测试覆盖新增/更新/删除、一致性损坏、过期门禁、写后回退拦截、重复生成保护以及 HTTP Host/Origin/令牌/动作白名单。浏览器已实测七步操作、1,200→1,220 笔差异补迁、暂停/重播不产生新后端事件、只读回退及桌面/窄屏布局。真实 ECS 执行与托管迁移服务集成未验证。
+当前共 11 项测试，覆盖订单完整性、过期门禁、写后回退拦截、HTTP 边界、状态读取不阻塞动作、速率计算、摘要失败不验收、证据恢复及资源归属检查。真实 ECS、128 MiB SFTP、七步订单补迁、割接及只读回退已实测；SMS/DRS/OMS 未集成。
+
+## 速率与费用口径
+
+SFTP 回调记录客户端已发送字节，当前速率采用约 1 秒滑动窗口，平均值为总发送量除以完整 SFTP 传输阶段耗时。目标接收长度和摘要独立确认后才验收。曲线保留最近 240 个采样点，约一分钟；生成文件、建连与摘要计算不混入传输速率。不将动画或短窗口峰值解释为公网性能承诺。
+
+上传属于入云方向，5Mbps 配置对应出云方向。华为云文档说明，所购带宽不超过 10Mbit/s 时，常规区域入云限速为 10Mbit/s（部分区域例外）；短窗口还受客户端缓冲与突发影响。参见[入云与出云带宽](https://support.huaweicloud.com/eip_faq/faq_bandwidth_0007.html)和[EIP 按流量计费](https://support.huaweicloud.com/price-eip/eip_billing_0005.html)。

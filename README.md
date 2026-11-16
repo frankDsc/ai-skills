@@ -12,7 +12,7 @@
 ## 完整 Demo
 
 - [HSS 最佳实践实验室（前端 + 后端）](demos/hss-best-practice/)：北京四真实 ECS、Agent 安装、企业版防护、十种受控场景、动态攻击与检测链路、实际 HSS 告警与限定资源清理。
-- [合成数据搬迁实践（前端 + 后端）](demos/cloud-migration/)：订单与附件的全量复制、差异补迁、内容校验、割接门禁和只读回退；当前为本机预演，保留既有 ECS SSH 执行入口，真实 ECS 与 SMS/DRS/OMS 集成尚未验收。
+- [合成数据搬迁实践（前端 + 后端）](demos/cloud-migration/)：真实 ECS 上的订单补迁、割接与只读回退；128 MiB 跨网络 SFTP 实传、每秒速率曲线、进度和云端 SHA-256 已实测。SMS/DRS/OMS 为生产映射，未集成。
 
 ## 架构图工具使用
 
