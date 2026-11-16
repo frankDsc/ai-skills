@@ -1,0 +1,30 @@
+{
+  "region": "cn-north-4",
+  "scope": "互联网边界防护；两个独立 VPC 经公网 EIP 通信，不使用对等连接或 ER",
+  "quote_date": "2026-11-16",
+  "budget_cny": 10,
+  "hours": 2,
+  "cfw_gb": 1,
+  "egress_gb": 1,
+  "rates": {"cfw_hour": 2.16, "cfw_gb": 0.36, "ecs_hour": 0.46, "disk_hour": 0.0196, "eip_hour": 0.02, "egress_gb": 0.8},
+  "quote_source": "华为云 BSS 按需询价 API；本次账号实时报价快照，不代表可购买资格",
+  "resources": [
+    {"service":"CFW", "count":1, "config":"专业版按需；仅接入本轮业务 EIP"},
+    {"service":"ECS", "count":2, "config":"c6.large.2 · 2核4GB · Ubuntu 22.04"},
+    {"service":"EVS", "count":2, "config":"每台 40GB 高 IO 系统盘"},
+    {"service":"EIP", "count":2, "config":"每个 5Mbps · 按流量计费"},
+    {"service":"VPC / 子网 / 安全组", "count":2, "config":"两侧独立；SSH 仅操作端 /32；测试端口仅对端 /32"}
+  ],
+  "scenarios": [
+    {"id":"ingress", "name":"入站访问控制", "tag":"互联网 → 业务", "description":"探测机访问业务机 EIP:8080。先放行，再添加仅匹配探测 EIP /32 的拒绝规则，最后恢复。", "stages":["基线：预期 HTTP 200；记录时间、五元组和响应耗时", "阻断：预期连接失败；匹配 CFW 入站拒绝规则", "取证：查询 CFW 访问日志，核对方向、时间、五元组与规则 ID", "恢复：撤销本轮拒绝规则，预期再次 HTTP 200"], "acceptance":"基线成功 + 阻断失败 + 精确匹配云端拒绝日志 + 恢复成功，四项同时成立才通过。"},
+    {"id":"egress", "name":"出站访问控制", "tag":"业务 → 受控端点", "description":"业务机访问自有探测机 EIP:18080；固定单一目的地址，不访问第三方目标。", "stages":["基线：业务机到探测机的固定 HTTP 请求预期成功", "阻断：出站拒绝只匹配探测 EIP /32 和 TCP 18080", "取证：CFW 出站日志关联本轮源、目的、端口与规则 ID", "恢复：删除本轮拒绝规则，验证出站 HTTP 再次成功"], "acceptance":"与入站分别验收；不能用入站日志证明出站控制生效。"},
+    {"id":"priority", "name":"最小权限与规则优先级", "tag":"策略 → 命中规则", "description":"在固定测试流上验证精确规则与宽泛规则的优先级；保留管理 SSH 放行，演练不操作其他业务资产。", "stages":["基线：保存当前策略、顺序和规则 ID，固定测试五元组", "阻断：将精确拒绝置于宽泛允许之前，预期拒绝", "取证：核对实际命中规则 ID，不能只看规则配置页", "恢复：恢复原顺序，验证业务请求与 SSH 管理连通"], "acceptance":"规则顺序、实际命中 ID、请求结果一致；管理通道始终可用。"},
+    {"id":"ips", "name":"IPS 检测验证（可选）", "tag":"受控输入 → 原生告警", "description":"只针对本轮自有测试应用执行固定、无破坏性的测试输入；检出受规则库、模式和协议影响。", "stages":["基线：确认 CFW IPS 模式和当前规则库，记录版本", "测试：仅向自有目标发送固定的无破坏性测试输入", "取证：查询真实攻击日志，核对本轮资产、时间与特征", "复核：无匹配告警则记为未命中；请求失败不等于 IPS 检出"], "acceptance":"只有匹配原生攻击日志才能标记检出；ACL 拒绝日志不能充当 IPS 告警。"}
+  ],
+  "sources": [
+    {"title":"按需购买与区域限制", "url":"https://support.huaweicloud.com/usermanual-cfw/cfw_01_0265.html"},
+    {"title":"CFW 按需计费说明", "url":"https://support.huaweicloud.com/price-cfw/cfw_03_0005.html"},
+    {"title":"防火墙列表 API", "url":"https://support.huaweicloud.com/api-cfw/ListFirewallList.html"},
+    {"title":"访问异常与规则排查", "url":"https://support.huaweicloud.com/intl/zh-cn/cfw_faq/cfw_01_0320.html"}
+  ]
+}

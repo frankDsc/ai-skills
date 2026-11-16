@@ -41,6 +41,8 @@
 
 ## 快速体验
 
+CFW 新增[最佳实践方案预览](demos/cfw-best-practice/README.md)：复用 HSS 前端风格，提供官方图标架构图、只读按需资格核验、入站/出站策略推演与报价。当前账号按需资格受限，**尚未部署真实 CFW 或 ECS，不属于已完成的云端实测 Demo**。
+
 ```bash
 cd skills/huawei-cloud-bestpractice-demo
 pip install huaweicloudsdkcore huaweicloudsdkecs huaweicloudsdkvpc huaweicloudsdkeip paramiko flask
