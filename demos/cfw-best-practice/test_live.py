@@ -5,11 +5,34 @@ import json
 from pathlib import Path
 import tempfile
 import threading
+import os
+import subprocess
+import sys
 from unittest.mock import patch
 from live import Lab, owned_firewall, matches_deny
 
 
 class LiveSafetyTests(unittest.TestCase):
+    def test_new_round_uses_explicit_private_runtime_without_touching_old_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result=subprocess.run([sys.executable,'-c','import live; print(live.RUNTIME)'],env={**os.environ,'CFW_DEMO_RUNTIME':directory},capture_output=True,text=True,check=True)
+            self.assertEqual(result.stdout.strip(),directory)
+            self.assertEqual(list(Path(directory).iterdir()),[])
+
+    def test_already_bound_eip_is_verified_without_rebinding(self):
+        lab=Lab.__new__(Lab);lab.pid='pid';lab.guard_active=lambda:None;lab.write=lambda:None
+        lab.state={'demo_id':'lab','checks':{},'resources':{role:{'server_id':role,'port_id':role+'-port','eip_id':role+'-eip','public_ip':ip,'peer_rule_id':'rule'} for role,ip in [('probe','192.0.2.1'),('business','198.51.100.2')]}}
+        lab.server=lambda role:SimpleNamespace(status='ACTIVE',to_dict=lambda:{'os_extended_volumesvolumes_attached':[{'id':role+'-disk','boot_index':0}]})
+        calls=[]
+        def api(service,path,method='GET',*args,**kwargs):
+            calls.append(method);role=path.rsplit('/',1)[1].removesuffix('-eip')
+            return {'publicip':{'public_ip_address':lab.state['resources'][role]['public_ip'],'port_id':role+'-port'}}
+        lab.api=api
+        self.assertEqual(lab.bind_hosts(),{'hosts_ready':True})
+        self.assertEqual(calls,['GET','GET'])
+        lab.api=lambda *args,**kwargs:{'publicip':{'public_ip_address':'192.0.2.1','port_id':'foreign'}}
+        with self.assertRaises(ValueError):lab.bind_hosts()
+
     def test_firewall_name_and_postpaid_ownership_required(self):
         self.assertTrue(owned_firewall({'fw_instance_name':'lab','charge_mode':1},'lab'))
         self.assertFalse(owned_firewall({'fw_instance_name':'lab','charge_mode':0},'lab'))

@@ -1,6 +1,7 @@
 """Local CFW dashboard: real scoped runtime when deployed, otherwise safe preview."""
 import argparse
 import json
+import os
 from pathlib import Path
 import secrets
 import threading
@@ -17,7 +18,8 @@ ORIGINS = ('http://127.0.0.1:8902', 'http://localhost:8902')
 def create_app(cloud=None):
     app = Flask(__name__)
     live = None
-    if cloud is None and (Path.home()/'.local/state/cfw-best-practice-lab/live-state.json').exists():
+    runtime = Path(os.environ.get('CFW_DEMO_RUNTIME', str(Path.home()/'.local/state/cfw-best-practice-lab'))).expanduser()
+    if cloud is None and (runtime/'live-state.json').exists():
         from live_service import LiveService
         live = LiveService()
     cloud = cloud or Cloud()

@@ -25,7 +25,7 @@ from huaweicloudsdkecs.v2 import (EcsClient, ShowServerRequest, CreateServersReq
     PostPaidServerSecurityGroup, PostPaidServerExtendParam, ListServerInterfacesRequest,
     DeleteServersRequest, DeleteServersRequestBody, ServerId)
 
-RUNTIME = Path.home() / '.local/state/cfw-best-practice-lab'
+RUNTIME = Path(os.environ.get('CFW_DEMO_RUNTIME', str(Path.home() / '.local/state/cfw-best-practice-lab'))).expanduser()
 
 
 def save(path, value):
@@ -208,11 +208,14 @@ class Lab:
             raise ValueError('CFW 尚未运行，不创建付费主机')
         if not self.state.get('operator_cidrs'):
             import ipaddress
-            # Determine actual operator egress over the same system route, not a broad SSH CIDR.
-            session = requests.Session(); session.trust_env = False
-            ip = session.get('https://api.ipify.org', timeout=15).text.strip()
-            ipaddress.IPv4Address(ip)
-            self.state['operator_cidrs'] = [ip + '/32']; self.write()
+            cidrs = self.plan.get('operator_cidrs')
+            if not cidrs:
+                session = requests.Session(); session.trust_env = False
+                ip = session.get('https://api.ipify.org', timeout=15).text.strip()
+                cidrs = [str(ipaddress.IPv4Address(ip)) + '/32']
+            if not 1 <= len(cidrs) <= 3 or any(ipaddress.ip_network(c).version != 4 or ipaddress.ip_network(c).prefixlen != 32 for c in cidrs):
+                raise ValueError('管理来源必须为已核实的 IPv4 /32，最多三条')
+            self.state['operator_cidrs'] = cidrs; self.write()
         for i, role in enumerate(('probe', 'business')):
             self.guard_active()
             res = self.state['resources'].setdefault(role, {})
@@ -271,7 +274,12 @@ class Lab:
                 self.host_remember(role, 'eip_id', eip['id']); self.host_remember(role, 'public_ip', eip['public_ip_address'])
                 if eip.get('bandwidth_id'):
                     self.host_remember(role, 'bandwidth_id', eip['bandwidth_id'])
-            self.api('vpc', f'/v1/{self.pid}/publicips/{res["eip_id"]}', 'PUT', {'publicip': {'port_id': res['port_id']}})
+            path = f'/v1/{self.pid}/publicips/{res["eip_id"]}'
+            current = self.api('vpc', path)['publicip']
+            if current.get('public_ip_address') != res['public_ip'] or current.get('port_id') not in (None, '', res['port_id']):
+                raise ValueError('EIP 地址或绑定归属已改变，停止接入')
+            if current.get('port_id') != res['port_id']:
+                self.api('vpc', path, 'PUT', {'publicip': {'port_id': res['port_id']}})
             self.host_remember(role, 'bound', True)
         for role, peer, port in (('probe', 'business', 18080), ('business', 'probe', 8080)):
             r = self.state['resources'][role]

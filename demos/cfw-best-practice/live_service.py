@@ -21,7 +21,7 @@ class LiveService:
 
     def plan(self, base):
         private = json.loads((RUNTIME/'hongkong-plan.json').read_text())
-        return {**base, 'region': private['region'], 'rates': private['rates'], 'quote_date': '2026-11-16'}
+        return {**base, 'region': private['region'], 'rates': private['rates'], 'quote_date': private.get('quoted_at',base['quote_date'])[:10]}
 
     def snapshot(self, base):
         state = self.state()

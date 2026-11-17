@@ -70,11 +70,15 @@ python -m unittest -v test_app test_live
 1. 运行 `python prepare.py`，检查实际报价及授权范围。只有价格、区域与购买授权符合时才开通。
 2. 运行 `python live.py open-cfw`，仅 `postPaid`、专业版、禁止自动续费；保存作业 ID，不能重复采购不明作业。立即建立按本轮 Demo ID 和期限的原生自动清理任务。
 3. CFW 状态为运行中后，运行 `create-hosts`；待 ECS 运行后运行 `bind-hosts`。
-4. 在空白测试机上运行 `initialize-tls`，待初始化完成再运行 `verify-tls`；然后运行 `connect-services` 确认本轮业务 EIP 防护。
+4. 先运行 `connect-services` 建立本轮策略并确认 EIP 防护；在空白测试机上运行 `initialize-tls`，待初始化完成再运行 `verify-tls`。TLS 管理精确放行保持在默认拒绝之前。
 5. 前端运行固定实测，或 `python live.py exercise --scenario ingress`（也支持 `egress`、`priority`）。
 6. `python live.py cleanup --confirm <本轮-demo-id>`；异步删除未完成应重试并核验，勿删除状态文件来掩盖资源。
 
 同一轮状态已释放后禁止自动重新采购。如需另一轮，先归档旧证据、确认云端清零，再显式准备新状态。此仓库不包含当前账号的私有运行文件。
+
+新一轮可为所有命令及前端设置同一个 `CFW_DEMO_RUNTIME`，指向新的私有目录；旧轮状态、证据和账单仍保留在原目录。新轮按实时询价执行，不能复用旧轮账单或释放核验。自动清理任务也必须明确设置该变量并核对新轮 Demo ID，避免操作旧轮或其他资产。
+
+初始化顺序使用 `bind-hosts` → `connect-services` → `initialize-tls` → `verify-tls`，使默认拒绝先建立，再把 TLS 管理精确放行置于其上方。管理来源来自当前核实的公网出口，仅支持最多三条 IPv4 `/32`。
 
 ## 架构源与官方参考
 
