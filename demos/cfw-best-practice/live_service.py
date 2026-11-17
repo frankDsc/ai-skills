@@ -1,5 +1,6 @@
 """Local UI bridge: fixed asynchronous actions and real control-plane polling."""
 import fcntl
+import base64
 import json
 from pathlib import Path
 import threading
@@ -8,6 +9,39 @@ import uuid
 
 from live import Lab, RUNTIME, save
 from cloud import estimate
+
+
+def ips_evidence(state):
+    """Read-only evidence from the scoped backend IPS experiment; never expose packets."""
+    path = RUNTIME/'ips-events.json'
+    evidence = json.loads(path.read_text()) if path.exists() else {}
+    if evidence.get('demo_id') != state['demo_id']: return []
+    result = []
+    for run in evidence.get('runs', []):
+        name = run.get('name', '')
+        if not name.startswith(state['demo_id']+'-ips-'): continue
+        matched = []
+        for log in run.get('logs', []):
+            rule_id = run.get('rule', {}).get('ips_id')
+            if not rule_id or log.get('attack_rule') != name or str(log.get('attack_rule_id')) != str(rule_id): continue
+            try:
+                packet = base64.b64decode(log.get('packet', ''), validate=True).decode('ascii')
+                if not run.get('marker') or run['marker'] not in packet: continue
+                if str(log.get('protocol')).upper() != 'TCP': continue
+                for sample in run.get('measurements', []):
+                    if (all(str(log.get(k, '')).split('(',1)[0] == str(sample.get(k)) for k in ('src_ip','dst_ip','src_port','dst_port'))
+                        and sample['started_at']-5000 <= log['event_time'] <= sample['finished_at']+5000):
+                        matched.append(log); break
+            except (ValueError, TypeError, KeyError, UnicodeDecodeError): continue
+        action = run.get('action_type')
+        ms = run.get('measurements', [])
+        normal = all(len(run.get(k, [])) == 3 and all(x.get('http_status') == 200 for x in run[k]) for k in ('baseline','restored'))
+        behavior = len(ms) == 3 and action in (0,1) and all(x.get('http_status') == 200 if action == 0 else x.get('http_status') is None and bool(x.get('error')) for x in ms)
+        logs = [{k:log.get(k) for k in ('event_time','action','attack_rule','attack_rule_id','level','src_ip','dst_ip','src_port','dst_port','log_id')} for log in matched]
+        passed = bool(normal and behavior and run.get('rule_removed') and any(log.get('action') == ('permit' if action == 0 else 'deny') for log in matched))
+        result.append({'name':name, 'action_type':action, 'started_at':run.get('started_at'), 'status':'passed' if passed else 'awaiting_verification',
+                       'request_count':len(ms), 'http_200_count':sum(x.get('http_status') == 200 for x in ms), 'rule_removed':run.get('rule_removed',False), 'logs':logs})
+    return result
 
 
 class LiveService:
@@ -47,7 +81,7 @@ class LiveService:
                 'cleanup_due_at': state.get('cleanup_due_at'), 'started_at': state.get('started_at'),
                 'cleanup_scheduled': bool(state.get('cleanup_automation_id')) and not state.get('released'),
                 'released': state.get('released',False), 'release_verification': verified, 'billing_summary': billing,
-                'cloud': cloud, 'plan': self.plan(base), 'estimate': estimate(self.plan(base)),
+                'cloud': cloud, 'plan': self.plan(base), 'estimate': estimate(self.plan(base)), 'ips_events': ips_evidence(state),
                 'busy': self.mutex.locked(), 'jobs': self.jobs[-20:], 'tests_executed': len(state['runs']),
                 'logs': [record for run in state['runs'] for record in run.get('matched_logs',[])]}
 

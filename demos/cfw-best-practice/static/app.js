@@ -173,7 +173,7 @@ function renderLive(d) {
   $('real-test').textContent = selected==='ips' ? 'IPS 可选场景 · 未接入实际执行器' : ready ? '▷ 执行当前选定场景' : '等待真实服务和防护就绪';
   $('restore').disabled=d.busy || d.released || !checks.protected;
   $('cleanup').disabled=d.busy || d.released || !d.resources_created;
-  renderRuns(runs); renderLogs(d.logs);
+  renderRuns(runs); renderLogs(d.logs); renderIps(d.ips_events || []);
   $('real-jobs').textContent = (d.jobs || []).slice(-3).map(j => `${j.action}${j.scenario?' / '+j.scenario:''}：${({running:'执行中',success:'执行结束',error:'未完成'})[j.status]}${j.error?' · '+j.error:''}`).join('；');
 }
 function renderRuns(runs) {
@@ -211,6 +211,17 @@ function renderLogs(logs){
   if(!logs.length){feed.append(element('div','尚无精确匹配的原生拒绝日志；不会用请求失败代替日志证据。','empty'));return;}
   const table=document.createElement('table'),head=document.createElement('tr');['云端时间','动作 / 规则','源 → 目的'].forEach(x=>head.append(element('th',x)));table.append(head);
   const seen=new Set();for(const l of logs){const id=[l.rule_id,l.log_id,l.hit_time,l.src_port].join('|');if(seen.has(id))continue;seen.add(id);const row=document.createElement('tr');[date(l.hit_time),`${l.action} / ${l.rule_name||l.rule_id}`,`${l.src_ip}:${l.src_port} → ${l.dst_ip}:${l.dst_port}`].forEach(x=>row.append(element('td',String(x))));table.append(row);}feed.append(table);
+}
+function renderIps(runs){
+  $('ips-events').hidden=!runs.length;
+  const feed=$('ips-event-feed');feed.replaceChildren();
+  for(const r of runs){
+    const card=element('article','','real-run');
+    card.append(element('strong',r.action_type===0?'IPS 观察：记录并放行':'IPS 拦截：重置连接'),element('p',r.name,'muted'));
+    card.append(element('p',`${r.status==='passed'?'请求 + 攻击事件日志 + 恢复通过':'等待完整核验'} · HTTP 200 ${r.http_200_count}/${r.request_count} · 精确匹配 ${r.logs.length} 条原生事件`,r.status==='passed'?'good':'warn'));
+    for(const l of r.logs)card.append(element('p',`${date(l.event_time)} · ${l.action} · 规则 ${l.attack_rule_id} · ${l.src_ip}:${l.src_port} → ${l.dst_ip}:${l.dst_port}`,'helper'));
+    card.append(element('small',r.rule_removed?'测试特征已删除；恢复结果计入上方验收。':'测试特征清理待核验。','muted'));feed.append(card);
+  }
 }
 async function executeLive(id,scenario){
   const data={id,scenario_id:scenario};

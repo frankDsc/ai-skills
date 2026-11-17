@@ -13,6 +13,28 @@ from live import Lab, owned_firewall, matches_deny
 
 
 class LiveSafetyTests(unittest.TestCase):
+    def test_ips_evidence_requires_native_signature_tuple_time_and_recovery(self):
+        import base64
+        from live_service import ips_evidence
+        sample={'src_ip':'192.0.2.1','dst_ip':'198.51.100.2','src_port':45001,'dst_port':8080,'started_at':10000,'finished_at':10050,'http_status':None,'error':'ConnectionResetError'}
+        log={**{k:sample[k] for k in ('src_ip','dst_ip','src_port','dst_port')},'event_time':10000,'attack_rule':'lab-ips-block','attack_rule_id':'350001','protocol':'TCP','action':'deny','packet':base64.b64encode(b'GET /orders?cfw_lab=UNIQUE_MARKER').decode(),'private_header':'PRIVATE_VALUE'}
+        run={'name':'lab-ips-block','action_type':1,'marker':'UNIQUE_MARKER','rule':{'ips_id':'350001'},'measurements':[sample]*3,'baseline':[{'http_status':200}]*3,'restored':[{'http_status':200}]*3,'rule_removed':True,'logs':[log]}
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);path=root/'ips-events.json'
+            def read(record=run, demo='lab'):
+                path.write_text(json.dumps({'demo_id':demo,'runs':[record]}))
+                with patch('live_service.RUNTIME',root):return ips_evidence({'demo_id':'lab'})
+            result=read()
+            self.assertEqual(result[0]['status'],'passed')
+            self.assertEqual(len(result[0]['logs']),1)
+            self.assertNotIn('packet',json.dumps(result));self.assertNotIn('PRIVATE_VALUE',json.dumps(result))
+            self.assertEqual(read(demo='different-lab'),[])
+            for key,value in [('src_port',45002),('event_time',100000),('attack_rule_id','other'),('packet',base64.b64encode(b'WRONG_MARKER').decode()),('action','permit')]:
+                changed=deepcopy(run);changed['logs'][0][key]=value
+                self.assertNotEqual(read(changed)[0]['status'],'passed',key)
+            changed=deepcopy(run);changed['restored']=[]
+            self.assertNotEqual(read(changed)[0]['status'],'passed')
+
     def test_new_round_uses_explicit_private_runtime_without_touching_old_state(self):
         with tempfile.TemporaryDirectory() as directory:
             result=subprocess.run([sys.executable,'-c','import live; print(live.RUNTIME)'],env={**os.environ,'CFW_DEMO_RUNTIME':directory},capture_output=True,text=True,check=True)
