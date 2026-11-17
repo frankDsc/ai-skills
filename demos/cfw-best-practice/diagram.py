@@ -9,10 +9,10 @@ ICONS = json.loads((HERE / 'icons.json').read_text())
 
 
 def build():
-    out = ['<svg id="arch" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 500" role="img" aria-label="方案预览：受控探测 ECS 经公网 EIP，通过 CFW 互联网边界防护访问合成订单 ECS；IAM 管理与原生日志独立显示">',
+    out = ['<svg id="arch" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 500" role="img" aria-label="演练架构：受控探测 ECS 经公网 EIP，通过 CFW 互联网边界防护访问合成订单 ECS；IAM 管理与原生日志独立显示">',
            '<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8" fill="#c7000b"/></marker><marker id="control" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#9195a3"/></marker></defs>',
            '<rect width="1240" height="500" fill="white"/>',
-           '<text x="40" y="34" font-size="14" fill="#a45322">方案预览 · 尚未部署 · 箭头表示逻辑防护路径，非 CFW 实例位于 VPC 内</text>']
+           '<text x="40" y="34" font-size="14" fill="#a45322">演练架构 · 仅合成订单 · CFW 为托管透明防护，不部署在 ECS 内</text>']
     for x in (40, 472, 904):
         out.append(f'<rect x="{x}" y="208" width="304" height="224" rx="14" fill="#fafbfc" stroke="#d8dce4" stroke-dasharray="5 5"/>')
     for e in MODEL['edges']:
@@ -30,7 +30,7 @@ def build():
         out.append(f'<text x="{x+16}" y="{y+69}" font-size="16" font-weight="600" fill="#242630">{escape(n["label"])}</text><text x="{x+16}" y="{y+92}" font-size="13" fill="#777d8b">{escape(n["sub"])}</text></g>')
     for label in MODEL['labels']:
         out.append(f'<text x="{label["x"]}" y="{label["y"]+16}" font-size="14" fill="#777d8b">{escape(label["text"])}</text>')
-    out.append('<text x="40" y="474" font-size="13" fill="#858996">入站沿红线向右；出站反向。管理 SSH 单独放行。VPC 间无私网互联；原生日志不额外购买 LTS。</text><circle id="flow-dot" r="7" fill="#c7000b" visibility="hidden"/></svg>')
+    out.append('<text x="40" y="474" font-size="13" fill="#858996">入站向右、出站反向；管理为证书固定 TLS/443 内真实 SSH（操作端 /32）。原生日志不另购 LTS。</text><circle id="flow-dot" r="7" fill="#c7000b" visibility="hidden"/></svg>')
     return '\n'.join(out)
 
 

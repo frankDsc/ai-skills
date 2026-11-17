@@ -1,7 +1,7 @@
-<svg id="arch" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 500" role="img" aria-label="方案预览：受控探测 ECS 经公网 EIP，通过 CFW 互联网边界防护访问合成订单 ECS；IAM 管理与原生日志独立显示">
+<svg id="arch" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 500" role="img" aria-label="演练架构：受控探测 ECS 经公网 EIP，通过 CFW 互联网边界防护访问合成订单 ECS；IAM 管理与原生日志独立显示">
 <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8" fill="#c7000b"/></marker><marker id="control" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8" fill="#9195a3"/></marker></defs>
 <rect width="1240" height="500" fill="white"/>
-<text x="40" y="34" font-size="14" fill="#a45322">方案预览 · 尚未部署 · 箭头表示逻辑防护路径，非 CFW 实例位于 VPC 内</text>
+<text x="40" y="34" font-size="14" fill="#a45322">演练架构 · 仅合成订单 · CFW 为托管透明防护，不部署在 ECS 内</text>
 <rect x="40" y="208" width="304" height="224" rx="14" fill="#fafbfc" stroke="#d8dce4" stroke-dasharray="5 5"/>
 <rect x="472" y="208" width="304" height="224" rx="14" fill="#fafbfc" stroke="#d8dce4" stroke-dasharray="5 5"/>
 <rect x="904" y="208" width="304" height="224" rx="14" fill="#fafbfc" stroke="#d8dce4" stroke-dasharray="5 5"/>
@@ -29,4 +29,4 @@
 <text x="920" y="244" font-size="14" fill="#777d8b">业务侧 / 专用 VPC-B</text>
 <text x="344" y="308" font-size="14" fill="#777d8b">经公网 EIP</text>
 <text x="776" y="308" font-size="14" fill="#777d8b">透明防护路径</text>
-<text x="40" y="474" font-size="13" fill="#858996">入站沿红线向右；出站反向。管理 SSH 单独放行。VPC 间无私网互联；原生日志不额外购买 LTS。</text><circle id="flow-dot" r="7" fill="#c7000b" visibility="hidden"/></svg>
+<text x="40" y="474" font-size="13" fill="#858996">入站向右、出站反向；管理为证书固定 TLS/443 内真实 SSH（操作端 /32）。原生日志不另购 LTS。</text><circle id="flow-dot" r="7" fill="#c7000b" visibility="hidden"/></svg>

@@ -1,4 +1,4 @@
-"""HSS-style local CFW planning dashboard; paid deployment is blocked."""
+"""Local CFW dashboard: real scoped runtime when deployed, otherwise safe preview."""
 import argparse
 import json
 from pathlib import Path
@@ -16,6 +16,10 @@ ORIGINS = ('http://127.0.0.1:8902', 'http://localhost:8902')
 
 def create_app(cloud=None):
     app = Flask(__name__)
+    live = None
+    if cloud is None and (Path.home()/'.local/state/cfw-best-practice-lab/live-state.json').exists():
+        from live_service import LiveService
+        live = LiveService()
     cloud = cloud or Cloud()
     token = secrets.token_urlsafe(32)
     lock = threading.Lock()
@@ -39,10 +43,13 @@ def create_app(cloud=None):
 
     @app.get('/')
     def index():
-        return render_template('index.html', csrf=token, architecture=build(), plan=PLAN)
+        plan = live.plan(PLAN) if live else PLAN
+        architecture = build()
+        return render_template('index.html', csrf=token, architecture=architecture, plan=plan, estimate=estimate(plan), is_live=bool(live))
 
     @app.get('/api/status')
     def status():
+        if live: return jsonify(live.snapshot(PLAN))
         return jsonify(mode='preview', account=cloud.snapshot(), plan=PLAN, estimate=estimate(PLAN),
                        resources_created=0, tests_executed=0, logs=[], cleanup_scheduled=False,
                        deployment_enabled=False, blocker='当前为方案预览；未创建真实 CFW 或 ECS，未执行云端演练。')
@@ -61,10 +68,18 @@ def create_app(cloud=None):
 
     @app.post('/api/execute')
     def execute():
+        if live:
+            try: return jsonify(job_id=live.execute(request.get_json(silent=True)),status='running'),202
+            except ValueError as e: return jsonify(error=str(e)),400
+            except BlockingIOError: return jsonify(error='已有云端操作执行中，请稍后重试'),409
         return jsonify(error='当前预览版本禁止创建资源或执行云端动作；需先解决按需购买资格并接入真实执行器。'), 409
 
     @app.get('/api/export')
     def export():
+        if live:
+            response = jsonify(document_type='CFW 真实演练记录', **live.snapshot(PLAN))
+            response.headers['Content-Disposition'] = 'attachment; filename="cfw-live-evidence.json"'
+            return response
         response = jsonify(document_type='方案与资格核验（非实测报告）', plan=PLAN, estimate=estimate(PLAN),
                            account=cloud.snapshot(), resources_created=0, measurements=[], cloud_logs=[])
         response.headers['Content-Disposition'] = 'attachment; filename="cfw-lab-plan.json"'

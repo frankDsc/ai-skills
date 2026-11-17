@@ -41,7 +41,7 @@
 
 ## 快速体验
 
-CFW 新增[最佳实践方案预览](demos/cfw-best-practice/README.md)：复用 HSS 前端风格，提供官方图标架构图、只读按需资格核验、入站/出站策略推演与报价。当前账号按需资格受限，**尚未部署真实 CFW 或 ECS，不属于已完成的云端实测 Demo**。
+新增 [CFW 真实双机最佳实践](demos/cfw-best-practice/README.md)：中国香港 CFW 专业版按需与双 ECS，复用 HSS 前端风格和官方图标架构图，提供真实入站/出站 ACL、优先级测试、逐请求日志关联、耗时图与自动清理。没有私有运行状态时展示安全预览；不伪造实测或 IPS 告警。
 
 ```bash
 cd skills/huawei-cloud-bestpractice-demo

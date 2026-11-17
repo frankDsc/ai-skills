@@ -1,70 +1,83 @@
-# CFW 云防火墙最佳实践 · 方案预览
+# CFW 云防火墙 · 真实双机最佳实践
 
-当前交付为 **HSS 风格本地前端 + 官方图标架构图 + 只读账号核验 + 策略方案推演**。
-真实 CFW 和双 ECS 测试环境未创建，也没有真实请求、吞吐或安全告警结果。
+本例提供中国香港 `ap-southeast-1` 的真实 **CFW 专业版按需 + 双 ECS + 合成订单服务**，以及沿用 HSS 实验室风格的本机前端。真实动作、方案动画和原生日志分别展示。
 
-2026-11-16，北京四项目的官方 `ListFirewallList` 返回 `is_support_postpaid=false`、实例总数为 0；专业版购买页也仅提供包年/包月（¥9,600/月）。虽然 BSS 能返回按需报价，报价不代表当前账号可以购买。用户仅批准按需、预算 ¥10，并明确按需不可选时保留预览，因此未提交订单、未创建计费资源。没有使用主机 iptables 冒充 CFW。
+2026-11-16 已通过入站 ACL、出站 ACL 和规则优先级三项实测：每项 3 次基线 HTTP 200、3 次拒绝后失败、3 次恢复 HTTP 200；每个失败请求均按唯一规则 ID、完整五元组和时间窗关联原生 CFW 拒绝日志。未执行 IPS 检测，不用 ACL 日志冒充攻击告警。
 
-## 本地运行
-
-沿用 HSS 示例的 Flask 结构与红白视觉，不部署外部网站。凭证仅由本机后端在点击核验时读取。
+## 运行前端
 
 ```bash
 python -m pip install -r requirements.txt
-python app.py --preflight    # 只读 IAM 项目查询 + CFW ListFirewallList
-python app.py                # http://127.0.0.1:8902/
-python -m unittest -v test_app
+python app.py
+# http://127.0.0.1:8902/
+python -m unittest -v test_app test_live
 ```
 
-默认凭证为 `~/Downloads/credentials.csv`（恰好一行，列名 `Access Key Id` / `Secret Access Key`）；可用 `HWC_CREDENTIALS_CSV` 改为其他本机路径。不要把文件放入 Git。运行快照保存在 `~/.local/state/cfw-best-practice-lab/account-check.json`，文件权限 0600；`CFW_DEMO_RUNTIME` 可改保存目录。账号 ID、原始响应、凭证不进入页面或导出文件。
+前端仅监听本机。没有真实运行状态时展示安全预览；存在私有 `live-state.json` 时接入真实执行器。支持固定场景异步执行、实际请求耗时图、五元组、原生日志、恢复演练规则和导出真实证据。动画重播不再次执行云端动作。
 
-浏览器每 5 秒刷新**本地快照**；只有“重新核验按需资格”发起新的云端查询，页面分别展示两个时间。无云资源写入执行器，任何 `/api/execute` 请求都返回 409，即使将来核验为支持按需，也不会自行采购。
+页面每 5 秒读取实际执行记录，后台约每 15 秒查询 CFW/ECS 状态和原生日志，分别显示时间。演练动作持有跨进程文件锁；后台查询会让出锁。CSRF Token、Host/Origin 校验、固定动作白名单防止其他网页代操作。浏览器不能指定目标、原始命令、规则 ID 或采购配置。
 
-## 最小目标架构与验收
+凭证为本机 `~/Downloads/credentials.csv`，恰好一行，列名 `Access Key Id` / `Secret Access Key`；可通过 `HWC_CREDENTIALS_CSV` 更改本机路径。AK/SK、主机密码、TLS 令牌、证书、资源 ID 和原始实测证据均保存在 `~/.local/state/cfw-best-practice-lab/`，不进入仓库。敏感文件权限 0600。浏览器和导出仅使用允许的业务字段，不返回凭证、管理令牌和账号 ID。
 
-两个独立 VPC，各有 ECS、40GB 高 IO 盘、流量型 5Mbps EIP 和安全组。一侧运行固定探测服务（18080），另一侧运行仅含合成订单的测试应用（8080）。两侧不做私网互联，固定请求走 EIP；CFW 仅保护本轮业务 EIP。CFW 是托管的透明互联网边界防护，不安装在业务 ECS 内。管理 SSH 仅允许操作端 /32，测试端口仅允许对端 /32。
+## 架构与实际管理路径
 
-| 场景 | 真实验收要求 |
+- 探测侧 VPC-A：2核4GB ECS、40GB 高 IO 盘、5Mbps 流量型 EIP、固定 HTTP/18080 服务。
+- 业务侧 VPC-B：同规格 ECS 与盘/EIP，运行仅含 20 条合成订单的 HTTP/8080 应用。
+- 两个 VPC 不建立私网互联，固定测试请求经公网 EIP；CFW 仅保护本轮业务 EIP。管理和测试规则优先于默认拒绝。
+- 安全组与 CFW 的管理来源均为已核实的操作端 `/32`；8080/18080 仅对端 EIP `/32`。不扫描第三方，不接入其他云资产。
+- 本机直连公网 TCP/22 未能完成连接，故专用空白 ECS 经 Cloud-Init 初始化证书固定的 TLS/443 管理封装：TLS 验证服务器证书、HTTP CONNECT 校验独立随机令牌、目标只能是该主机的 `127.0.0.1:22`。内部仍由 Paramiko 执行真实 SSH，并固定 SSH 主机密钥，不是任意目标代理。不关闭证书校验，不额外购买云服务。
+- TLS 配置只在专用测试机初始化；已有业务服务时不会自动重装。Cloud-Init 保持既定清理时间，主机不安装额外第三方工具。
+
+`workload.py` 是无外部依赖的合成订单服务；`probe.py` 在真实 ECS 上逐个创建 TCP 连接，记录源端口、时间、HTTP 结果、字节和耗时。每次动作最多 9 个正常测量请求，本轮最多 20 次场景，响应上限 64KB，受控测试量远低于 100MB。HTTP 耗时包括网络、CFW 路径和应用处理，不能当作 CFW 自身处理时延或产品吞吐上限。
+
+## 验收和取舍
+
+| 场景 | 行为与证据 |
 |---|---|
-| 入站 ACL | 基线 HTTP 成功 → 精确拒绝 → 真实入站拒绝日志命中本轮五元组/规则 ID → 恢复成功 |
-| 出站 ACL | 业务机到自有探测端基线成功 → 出站拒绝 → 独立关联出站日志 → 恢复成功 |
-| 优先级 | 保存策略顺序，使用固定测试流调整精确规则优先级；核对实际命中规则 ID，恢复原策略 |
-| IPS（可选） | 固定无破坏输入只针对自有应用；实际攻击日志匹配本轮资产/时间/特征才标记检出；未命中如实记录 |
+| 入站 ACL | 探测端 → 业务 EIP:8080，成功 → 精确拒绝 → 恢复；关联本轮入站规则与五元组 |
+| 出站 ACL | 业务端 → 自有探测 EIP:18080，独立验证出站拒绝和恢复 |
+| 优先级 | 宽泛允许之上插入精确拒绝，保存真实规则顺序和命中 ID，结束后撤销两条演练规则 |
+| IPS（可选） | 当前未接入实际执行器，前端只展示验收方案，不声称已检出 |
 
-前端的“播放方案推演”只展示上述**预期**步骤和逻辑流向，不发送请求、不生成模拟云日志、不增加实测计数。动画速度和暂停只影响展示。
+每个拒绝请求均需匹配原生日志才通过。原始日志可能带地域后缀，匹配时仅规范化 IP 字段，仍严格核对两个端口、TCP 协议、唯一规则和时间窗。日志含 SYN 重传，因此日志条数可多于请求数。历史已验证日志保留，不因后续分页或查询失败被清空。
 
-网络与安全以最小权限为先：不接入其他账号资产、不修改既有 IAM 权限、不开放任意目标或原始 shell 命令。真实接入时需先保存策略和允许管理 SSH，再加入拒绝规则；API 回退路径必须不依赖 SSH。
+单区域、单业务机用于低成本教学，不提供生产 HA 或跨区灾备。仅合成数据，不承诺生产 RTO/RPO；恢复以撤销演练规则并重新请求成功验收。凭证和 IAM 权限不扩张；不用 HSS、WAF、ER、LTS 增加环境成本。
 
-单区域、单业务机用于低成本教学，不提供生产 HA 或跨区灾备。仅合成数据，本轮不设生产 RTO/RPO 承诺；恢复用撤销演练规则 + 请求复测验收。实际观测应包含响应耗时/成功率、五元组、云端访问日志与匹配规则 ID，IPS 告警单独存放。5Mbps EIP 会限制演练流量，不能用其结果推导 CFW 的产品吞吐上限。不额外购买 HSS、WAF、ER、LTS。
+## 费用和清理
 
-## 费用与生命周期
+香港账户 BSS 实时报价快照（2026-11-16，CNY）：
 
-`plan.json` 保留 2026-11-16 账户 BSS 按需询价快照（CNY，无折扣）。CFW 询价资源为 `hws.resource.type.cfw` / `cfw.professional` / `usage_duration`；流量为 `hws.resource.type.cfw.exp.trafficflow` / `cfw.expack.trafficflow.professional` / `megabyte`。
-
-| 项目 | 费率 | 2 小时估算 |
+| 项目 | 单价 | 2 小时估算 |
 |---|---:|---:|
-| 1 个 CFW 专业版 | ¥2.16/小时 | ¥4.32 |
-| 2 台 2核4GB ECS | ¥0.46/台·小时 | ¥1.84 |
-| 2 块 40GB 高 IO 盘 | ¥0.0196/块·小时 | ¥0.0784 |
-| 2 个流量型 EIP | ¥0.02/个·小时 | ¥0.08 |
-| CFW 处理流量，总计 1GB | ¥0.36/GB | ¥0.36 |
-| EIP 出云流量，总计 1GB | ¥0.80/GB | ¥0.80 |
-| 合计 | 固定 ¥3.1592/小时 | **¥7.4784，约 ¥7.48** |
+| 1 个 CFW 专业版按需 | ¥2.6712/小时 | ¥5.3424 |
+| 2 台 c6.large.2 ECS | ¥0.64/台·小时 | ¥2.56 |
+| 2 块 40GB 高 IO 盘 | ¥0.02296/块·小时 | ¥0.09184 |
+| 2 个流量型 EIP | ¥0.061/个·小时 | ¥0.244 |
+| CFW 处理流量 1GB | ¥0.4452/GB | ¥0.4452 |
+| EIP 出云流量 1GB | ¥1.045/GB | ¥1.045 |
+| 合计 | 固定 ¥4.11912/小时 | **¥9.72844，约 ¥9.73** |
 
-预算 ¥10 为执行约束与估算，不是云平台硬扣费上限。未部署，本轮新增费用为 ¥0，无需清理，也**没有启动自动清理任务**。不以本轮费用替代账户总账单。真实部署后应从首个资源创建成功起安排约 2 小时释放；该本机方案要求电脑在线。仅关机不能停止磁盘/EIP/CFW 等费用，需删除并逐项核验。
+若处理流量和出云流量各按 100MB（0.1GB）估算，2 小时约 ¥8.39。预算 ¥10 是执行约束，不是平台硬扣费限额；删除前持续计费，账单可能延后。
 
-## 资格开通后的后续工作（尚未执行）
+用户已批准本轮从首个资源创建起约 2 小时自动释放。当前私有运行状态保存准确期限；本机后端和 Codex 内置自动任务检查到期，ECS 另设原生定时删除。**本机仍须在线**，因为 CFW/EIP/磁盘/网络清理不依赖 ECS 自动删除。
 
-1. 向华为云确认当前账号、北京四项目的专业版按需资格；不扩大 IAM 权限，不自动改区域或月付。重新查询资格和价格；若超出已批准范围，先给出新方案。
-2. 接入真实 CFW 执行器，采购明确使用 `postPaid`；先确认开通成功，再创建专用双机网络。每次写入立即保存本轮资源 ID / 标签，失败时保留可清理状态。
-3. 从首个资源成功创建起建立 2 小时清理任务；给 ECS 配置原生定时删除作为补充。CFW/EIP/磁盘仍需独立释放。清理必须对每个 ID 做归属校验，禁止账号级批量删除。
-4. 部署固定的合成订单与探测服务，管理规则先行，接入单个业务 EIP。按表执行并持久化真实证据；对日志匹配使用时间窗 + 五元组 + 方向 + 规则 ID。
-5. 导出真实结果，释放本轮 CFW、ECS、盘、EIP、带宽及网络；逐个查询确认删除。部分失败应重试并通知，不把“已发起删除”当作停止计费。
+清理仅针对状态文件记录且核验名称、绑定关系、磁盘归属的本轮资源。先解除业务 EIP 的防护，异步删除本轮按需 CFW；随后确认删除 ECS、盘、EIP、随 EIP 自动释放的独占带宽和专用网络。逐项成功才移除 ID，保留失败项供重试；不能用关机或“已提交删除”代替停止计费。手动释放须输入完整 Demo ID。
 
-## 架构图与来源
+## 重新搭建时的操作顺序
 
-语义模型 `manifest.json` 与渲染器 `diagram.py` 分离；`architecture.svg` 是可编辑文本 SVG，官方服务图标以 data URI 内嵌，离线可用。`geometry.json` 记录卡片、外部标签与正交路径，使用 `architecture-diagram-tool/scripts/validate_geometry.py` 校验。
+`prepare.py` 是只读规格、镜像、资格和询价工具；已有未释放资源时拒绝覆盖计划。当前账号北京四不支持按需，香港支持；不能把报价成功视作购买资格。
 
-图标来自 [huaweicloud-latam/drawio-libraries](https://github.com/huaweicloud-latam/drawio-libraries)，color v3.2，提交 `52c33aa12fb816a5de403da85067e1c0f039b5be`；使用 ECS / CFW / IAM 的精确服务图标，未改画。日志卡为 CFW 原生功能，未冒用独立云服务图标。
+1. 运行 `python prepare.py`，检查实际报价及授权范围。只有价格、区域与购买授权符合时才开通。
+2. 运行 `python live.py open-cfw`，仅 `postPaid`、专业版、禁止自动续费；保存作业 ID，不能重复采购不明作业。立即建立按本轮 Demo ID 和期限的原生自动清理任务。
+3. CFW 状态为运行中后，运行 `create-hosts`；待 ECS 运行后运行 `bind-hosts`。
+4. 在空白测试机上运行 `initialize-tls`，待初始化完成再运行 `verify-tls`；然后运行 `connect-services` 确认本轮业务 EIP 防护。
+5. 前端运行固定实测，或 `python live.py exercise --scenario ingress`（也支持 `egress`、`priority`）。
+6. `python live.py cleanup --confirm <本轮-demo-id>`；异步删除未完成应重试并核验，勿删除状态文件来掩盖资源。
 
-官方说明：[按需开通](https://support.huaweicloud.com/usermanual-cfw/cfw_01_0265.html)、[按需计费](https://support.huaweicloud.com/price-cfw/cfw_03_0005.html)、[列表 API](https://support.huaweicloud.com/api-cfw/ListFirewallList.html)、[规则与流量排查](https://support.huaweicloud.com/intl/zh-cn/cfw_faq/cfw_01_0320.html)。
+同一轮状态已释放后禁止自动重新采购。如需另一轮，先归档旧证据、确认云端清零，再显式准备新状态。此仓库不包含当前账号的私有运行文件。
+
+## 架构源与官方参考
+
+`manifest.json` 语义模型与 `diagram.py` 渲染器分离；保留可编辑 `architecture.svg`、`geometry.json` 和离线图标。官方图标来自 [huaweicloud-latam/drawio-libraries](https://github.com/huaweicloud-latam/drawio-libraries)，color v3.2，提交 `52c33aa12fb816a5de403da85067e1c0f039b5be`，使用精确的 ECS/CFW/IAM 图标。日志卡表示 CFW 原生功能。
+
+官方说明：[按需购买](https://support.huaweicloud.com/usermanual-cfw/cfw_01_0265.html)、[按需计费](https://support.huaweicloud.com/price-cfw/cfw_03_0005.html)、[防火墙列表](https://support.huaweicloud.com/api-cfw/ListFirewallList.html)、[访问控制日志](https://support.huaweicloud.com/api-cfw/ListAccessControlLogs.html)。
